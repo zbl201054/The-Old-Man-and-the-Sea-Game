@@ -1,0 +1,3988 @@
+<!DOCTYPE html>
+<!--
+  =============================================================
+   《老人与海 · 命运之海》 互动叙事游戏
+   Copyright © 2026 曾泊霖 (Zeng BoLin)
+   基于欧内斯特·海明威原著《老人与海》改编，
+   仅供学习交流使用，禁止任何商业用途。
+   未经作者书面授权，请勿移除、篡改或修改本版权信息。
+  =============================================================
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="曾泊霖 (Zeng BoLin)">
+    <meta name="copyright" content="Copyright © 2026 曾泊霖">
+    <title>老人与海 · 命运之海</title>
+    <style>
+        /* ========== Reset ========== */
+        * { margin: 0; padding: 0; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
+
+        /* ========== Base ========== */
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "WenQuanYi Micro Hei", sans-serif;
+            background: #060e14;
+            color: #e8dcc8;
+            min-height: 100vh;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            padding: 24px;
+            overflow-x: hidden;
+        }
+
+        /* Deep ocean background with liquid light spots */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 20%, rgba(30,100,140,0.25) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% 70%, rgba(20,80,110,0.2) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 50% 50%, rgba(40,120,160,0.12) 0%, transparent 70%),
+                -webkit-linear-gradient(180deg, #060e14 0%, #0a1a24 30%, #0d1f2c 60%, #09151c 100%);
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 20%, rgba(30,100,140,0.25) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% 70%, rgba(20,80,110,0.2) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 50% 50%, rgba(40,120,160,0.12) 0%, transparent 70%),
+                -moz-linear-gradient(180deg, #060e14 0%, #0a1a24 30%, #0d1f2c 60%, #09151c 100%);
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 20%, rgba(30,100,140,0.25) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% 70%, rgba(20,80,110,0.2) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 50% 50%, rgba(40,120,160,0.12) 0%, transparent 70%),
+                linear-gradient(180deg, #060e14 0%, #0a1a24 30%, #0d1f2c 60%, #09151c 100%);
+        }
+        /* Subtle liquid wave overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 200%; height: 100%;
+            z-index: 0;
+            opacity: 0.03;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 60px,
+                rgba(180,220,255,0.5) 60px,
+                rgba(180,220,255,0.5) 62px
+            );
+            -webkit-animation: liquidDrift 25s linear infinite;
+            -moz-animation: liquidDrift 25s linear infinite;
+            animation: liquidDrift 25s linear infinite;
+        }
+        @-webkit-keyframes liquidDrift {
+            from { -webkit-transform: translateX(0) translateY(0); transform: translateX(0) translateY(0); }
+            to { -webkit-transform: translateX(-50%) translateY(-20px); transform: translateX(-50%) translateY(-20px); }
+        }
+        @-moz-keyframes liquidDrift {
+            from { -moz-transform: translateX(0) translateY(0); transform: translateX(0) translateY(0); }
+            to { -moz-transform: translateX(-50%) translateY(-20px); transform: translateX(-50%) translateY(-20px); }
+        }
+        @keyframes liquidDrift {
+            from { -webkit-transform: translateX(0) translateY(0); -moz-transform: translateX(0) translateY(0); transform: translateX(0) translateY(0); }
+            to { -webkit-transform: translateX(-50%) translateY(-20px); -moz-transform: translateX(-50%) translateY(-20px); transform: translateX(-50%) translateY(-20px); }
+        }
+
+        /* ========== Liquid Glass WebGL Canvas ========== */
+        #liquid-glass-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.55;
+            display: none;
+        }
+        #liquid-glass-bg.active {
+            display: block;
+        }
+
+        /* ========== App Container — 液态毛玻璃 ========== */
+        #app {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
+            width: 100%;
+            /* 毛玻璃核心 */
+            background: rgba(15, 45, 60, 0.55);
+            -webkit-backdrop-filter: blur(16px) saturate(140%);
+            backdrop-filter: blur(16px) saturate(140%);
+            /* 大圆角 */
+            border-radius: 28px;
+            padding: 32px 34px;
+            /* 多层阴影模拟液态深度 */
+            -webkit-box-shadow:
+                0 8px 32px rgba(0,0,0,0.5),
+                0 2px 8px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(0,0,0,0.15);
+            -moz-box-shadow:
+                0 8px 32px rgba(0,0,0,0.5),
+                0 2px 8px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(0,0,0,0.15);
+            box-shadow:
+                0 8px 32px rgba(0,0,0,0.5),
+                0 2px 8px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(0,0,0,0.15);
+            /* 玻璃边框 */
+            border: 1px solid rgba(255,255,255,0.1);
+            /* 顶部高光线 */
+            position: relative;
+            overflow: hidden;
+        }
+        /* 顶部液态高光 */
+        #app::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 20px; right: 20px;
+            height: 1px;
+            background: -webkit-linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background: -moz-linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ========== Header ========== */
+        #header {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-pack: justify;
+            -moz-box-pack: justify;
+            -ms-flex-pack: justify;
+            -webkit-justify-content: space-between;
+            justify-content: space-between;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(201,168,108,0.25);
+            position: relative;
+        }
+        #header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 0; width: 60px; height: 2px;
+            background: -webkit-linear-gradient(90deg, #c9a86c, transparent);
+            background: -moz-linear-gradient(90deg, #c9a86c, transparent);
+            background: linear-gradient(90deg, #c9a86c, transparent);
+            border-radius: 1px;
+        }
+        #header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            color: #d4b87a;
+            text-shadow: 0 0 20px rgba(201,168,108,0.2);
+        }
+        #save-indicator {
+            font-size: 13px;
+            color: rgba(180,210,220,0.8);
+            cursor: pointer;
+            background: rgba(255,255,255,0.06);
+            padding: 8px 18px;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            -webkit-transition: all 0.3s;
+            -moz-transition: all 0.3s;
+            transition: all 0.3s;
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+        #save-indicator:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(201,168,108,0.4);
+            -webkit-box-shadow: 0 0 16px rgba(201,168,108,0.15);
+            -moz-box-shadow: 0 0 16px rgba(201,168,108,0.15);
+            box-shadow: 0 0 16px rgba(201,168,108,0.15);
+        }
+
+        /* ========== Stats Bar — 玻璃卡片 ========== */
+        #stats {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            background: rgba(255,255,255,0.04);
+            padding: 14px 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.06);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+        }
+        .stat-item {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .stat-label { color: rgba(180,210,220,0.7); font-size: 13px; }
+        .stat-bar {
+            width: 90px;
+            height: 6px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 10px;
+            overflow: hidden;
+            -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+            -moz-box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+        }
+        .stat-fill {
+            height: 100%;
+            border-radius: 10px;
+            -webkit-transition: width 0.6s ease;
+            -moz-transition: width 0.6s ease;
+            transition: width 0.6s ease;
+            -webkit-box-shadow: 0 0 8px currentColor;
+            -moz-box-shadow: 0 0 8px currentColor;
+            box-shadow: 0 0 8px currentColor;
+        }
+        .stat-fill.will { background: -webkit-linear-gradient(left, #c9a86c, #f0d6a8); background: -moz-linear-gradient(left, #c9a86c, #f0d6a8); background: linear-gradient(to right, #c9a86c, #f0d6a8); color: #c9a86c; }
+        .stat-fill.sta  { background: -webkit-linear-gradient(left, #5b9aa0, #8ad4dc); background: -moz-linear-gradient(left, #5b9aa0, #8ad4dc); background: linear-gradient(to right, #5b9aa0, #8ad4dc); color: #5b9aa0; }
+        .stat-fill.ins  { background: -webkit-linear-gradient(left, #9b6b9b, #d4aad4); background: -moz-linear-gradient(left, #9b6b9b, #d4aad4); background: linear-gradient(to right, #9b6b9b, #d4aad4); color: #9b6b9b; }
+        .stat-val { color: #e8dcc8; font-weight: bold; min-width: 18px; font-size: 15px; }
+
+        /* ========== Scene & Story ========== */
+        #scene-title {
+            font-size: 15px;
+            color: #c9a86c;
+            margin-bottom: 6px;
+            padding: 6px 0 6px 16px;
+            font-weight: 600;
+            border-left: 3px solid rgba(201,168,108,0.5);
+            border-radius: 0 4px 4px 0;
+        }
+        #chapter-indicator {
+            font-size: 12px;
+            color: rgba(180,210,220,0.5);
+            margin-bottom: 16px;
+            letter-spacing: 3px;
+        }
+        #story-text {
+            background: rgba(255,255,255,0.03);
+            padding: 24px 26px;
+            border-radius: 20px;
+            line-height: 2;
+            font-size: 16px;
+            min-height: 100px;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-left: 3px solid rgba(58,106,122,0.5);
+            margin-bottom: 22px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+            -webkit-animation: fadeIn 0.4s ease;
+            -moz-animation: fadeIn 0.4s ease;
+            animation: fadeIn 0.4s ease;
+        }
+        @-webkit-keyframes fadeIn {
+            from { opacity: 0; -webkit-transform: translateY(10px); transform: translateY(10px); }
+            to { opacity: 1; -webkit-transform: translateY(0); transform: translateY(0); }
+        }
+        @-moz-keyframes fadeIn {
+            from { opacity: 0; -moz-transform: translateY(10px); transform: translateY(10px); }
+            to { opacity: 1; -moz-transform: translateY(0); transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; -webkit-transform: translateY(10px); -moz-transform: translateY(10px); transform: translateY(10px); }
+            to { opacity: 1; -webkit-transform: translateY(0); -moz-transform: translateY(0); transform: translateY(0); }
+        }
+
+        /* ========== Choices Grid ========== */
+        #choices-container {
+            display: -ms-grid;
+            display: grid;
+            -ms-grid-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        #choices-container.three-options {
+            -ms-grid-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
+        }
+        #choices-container.two-options {
+            -ms-grid-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
+        }
+        #choices-container.one-option {
+            -ms-grid-columns: 1fr;
+            grid-template-columns: 1fr;
+        }
+
+        .choice-btn {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #e8dcc8;
+            padding: 16px 20px;
+            border-radius: 18px;
+            font-size: 15px;
+            cursor: pointer;
+            text-align: left;
+            -webkit-transition: all 0.3s ease;
+            -moz-transition: all 0.3s ease;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            line-height: 1.6;
+            width: 100%;
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            -webkit-animation: fadeIn 0.4s ease;
+            -moz-animation: fadeIn 0.4s ease;
+            animation: fadeIn 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        /* 按钮左侧装饰线 */
+        .choice-btn::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 50%;
+            -webkit-transform: translateY(-50%);
+            -moz-transform: translateY(-50%);
+            transform: translateY(-50%);
+            width: 3px;
+            height: 0;
+            background: #c9a86c;
+            border-radius: 0 2px 2px 0;
+            -webkit-transition: height 0.3s ease;
+            -moz-transition: height 0.3s ease;
+            transition: height 0.3s ease;
+        }
+        .choice-btn:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(201,168,108,0.5);
+            -webkit-transform: translateY(-3px);
+            -moz-transform: translateY(-3px);
+            transform: translateY(-3px);
+            -webkit-box-shadow:
+                0 8px 24px rgba(0,0,0,0.3),
+                0 0 20px rgba(201,168,108,0.1);
+            -moz-box-shadow:
+                0 8px 24px rgba(0,0,0,0.3),
+                0 0 20px rgba(201,168,108,0.1);
+            box-shadow:
+                0 8px 24px rgba(0,0,0,0.3),
+                0 0 20px rgba(201,168,108,0.1);
+        }
+        .choice-btn:hover::before { height: 60%; }
+        .choice-btn:active {
+            -webkit-transform: translateY(-1px);
+            -moz-transform: translateY(-1px);
+            transform: translateY(-1px);
+            background: rgba(255,255,255,0.06);
+        }
+        .choice-btn.span-full {
+            -ms-grid-column: 1;
+            -ms-grid-column-span: 2;
+            grid-column: 1 / -1;
+        }
+
+        /* ========== Transition ========== */
+        .transition-text {
+            color: rgba(180,210,220,0.5);
+            text-align: center;
+            font-size: 15px;
+            padding: 16px 0;
+            letter-spacing: 2px;
+            -webkit-animation: pulse 2s ease-in-out infinite;
+            -moz-animation: pulse 2s ease-in-out infinite;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @-webkit-keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+        @-moz-keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        /* ========== Ending ========== */
+        .ending-title {
+            font-size: 28px;
+            text-align: center;
+            padding: 12px 0 8px;
+            letter-spacing: 6px;
+            font-weight: 700;
+        }
+        .ending-title.gold   { color: #ffd700; text-shadow: 0 0 30px rgba(255,215,0,0.35), 0 0 60px rgba(255,215,0,0.15); }
+        .ending-title.silver { color: #c0c0c0; text-shadow: 0 0 20px rgba(192,192,192,0.3); }
+        .ending-title.blue   { color: #6db3d4; text-shadow: 0 0 20px rgba(109,179,212,0.3); }
+        .ending-title.gray   { color: #999; }
+        .ending-title.dark   { color: #666; }
+        .ending-title.orange { color: #ff8c00; text-shadow: 0 0 20px rgba(255,140,0,0.3); }
+        .ending-title.purple { color: #b77cff; text-shadow: 0 0 20px rgba(183,124,255,0.3); }
+        .ending-title.green  { color: #5dc98e; text-shadow: 0 0 20px rgba(93,201,142,0.3); }
+        .ending-title.red    { color: #ff6347; text-shadow: 0 0 20px rgba(255,99,71,0.3); }
+        .ending-title.cyan   { color: #00ced1; text-shadow: 0 0 20px rgba(0,206,209,0.3); }
+        .ending-title.pink   { color: #ffb6c1; text-shadow: 0 0 20px rgba(255,182,193,0.3); }
+
+        .ending-grade {
+            text-align: center;
+            font-size: 13px;
+            color: rgba(180,210,220,0.5);
+            letter-spacing: 4px;
+            margin-bottom: 16px;
+        }
+
+        /* ========== Buttons ========== */
+        .restart-btn, .save-btn {
+            display: inline-block;
+            background: rgba(201,168,108,0.15);
+            color: #d4b87a;
+            border: 1px solid rgba(201,168,108,0.3);
+            padding: 12px 28px;
+            border-radius: 28px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 6px 6px 0 0;
+            -webkit-transition: all 0.3s ease;
+            -moz-transition: all 0.3s ease;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            letter-spacing: 1px;
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+        .restart-btn:hover {
+            background: rgba(201,168,108,0.25);
+            border-color: rgba(201,168,108,0.5);
+            -webkit-box-shadow: 0 0 20px rgba(201,168,108,0.2);
+            -moz-box-shadow: 0 0 20px rgba(201,168,108,0.2);
+            box-shadow: 0 0 20px rgba(201,168,108,0.2);
+            -webkit-transform: translateY(-2px);
+            -moz-transform: translateY(-2px);
+            transform: translateY(-2px);
+        }
+        .restart-btn.secondary {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.1);
+            color: rgba(200,215,220,0.7);
+        }
+        .restart-btn.secondary:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.2);
+            -webkit-box-shadow: 0 0 16px rgba(255,255,255,0.08);
+            -moz-box-shadow: 0 0 16px rgba(255,255,255,0.08);
+            box-shadow: 0 0 16px rgba(255,255,255,0.08);
+        }
+
+        /* ========== Gallery ========== */
+        #gallery {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        #gallery-title {
+            font-size: 14px;
+            color: rgba(180,210,220,0.5);
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-transition: color 0.3s;
+            -moz-transition: color 0.3s;
+            transition: color 0.3s;
+        }
+        #gallery-title:hover { color: rgba(201,168,108,0.7); }
+        #gallery-grid {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .gallery-badge {
+            padding: 5px 16px;
+            border-radius: 24px;
+            font-size: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: rgba(180,210,220,0.4);
+            background: rgba(255,255,255,0.02);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+        }
+        .gallery-badge.unlocked {
+            border-color: rgba(201,168,108,0.4);
+            color: #d4b87a;
+            background: rgba(201,168,108,0.08);
+        }
+
+        /* ========== 成就系统 ========== */
+        /* Toast 通知 */
+        #achievement-toast {
+            display: none;
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: rgba(10,30,38,0.96);
+            border: 2px solid #c9a86c;
+            border-radius: 16px;
+            padding: 20px 28px;
+            z-index: 9999;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.9);
+            max-width: 360px;
+            -webkit-transform: translateX(120%);
+            -moz-transform: translateX(120%);
+            transform: translateX(120%);
+            opacity: 0;
+            -webkit-transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            -moz-transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+        #toast-icon { font-size: 40px; }
+        #toast-title { font-size: 16px; font-weight: bold; color: #f0d6a8; }
+        #toast-name { font-size: 20px; font-weight: bold; color: #e8dcc8; margin: 4px 0; }
+        #toast-grade { font-size: 13px; color: #8aa9b3; }
+
+        /* 成就卡片 */
+        .ach-card {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-align: start;
+            -moz-box-align: start;
+            -ms-flex-align: start;
+            -webkit-align-items: flex-start;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #0a1e26;
+            border: 1px solid #1f4350;
+            width: 100%;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            -webkit-transition: all 0.2s;
+            -moz-transition: all 0.2s;
+            transition: all 0.2s;
+        }
+        .ach-card:hover { border-color: #3a6b7c; }
+        .ach-card.unlocked { background: #0d2630; }
+        .ach-card.unlocked.bronze { border-color: #b08d6b; }
+        .ach-card.unlocked.silver { border-color: #8aabc0; }
+        .ach-card.unlocked.gold { border-color: #c9a64a; }
+        .ach-card.unlocked.legend {
+            border-color: #ff6b6b;
+            -webkit-animation: legend-glow 1.5s infinite;
+            -moz-animation: legend-glow 1.5s infinite;
+            animation: legend-glow 1.5s infinite;
+        }
+        .ach-card.locked { opacity: 0.5; }
+        .ach-card-icon {
+            font-size: 28px;
+            -webkit-flex-shrink: 0;
+            -ms-flex-negative: 0;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .ach-card-body {
+            -webkit-box-flex: 1;
+            -moz-box-flex: 1;
+            -ms-flex: 1;
+            -webkit-flex: 1;
+            flex: 1;
+            min-width: 0;
+        }
+        .ach-card-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #c8dde6;
+            margin-bottom: 2px;
+        }
+        .ach-card-grade {
+            display: inline-block;
+            font-size: 10px;
+            padding: 1px 8px;
+            border-radius: 10px;
+            margin-bottom: 4px;
+            background: #1a3440;
+            color: #8aa9b3;
+        }
+        .ach-card-grade.bronze { color: #c8a070; background: rgba(176,141,107,0.15); }
+        .ach-card-grade.silver { color: #b0c8d8; background: rgba(176,200,216,0.15); }
+        .ach-card-grade.gold { color: #e8c84a; background: rgba(232,200,74,0.15); }
+        .ach-card-grade.legend { color: #ff6b6b; background: rgba(255,107,107,0.15); }
+        .ach-card-desc {
+            font-size: 12px;
+            color: #6a8f9a;
+            line-height: 1.5;
+        }
+        .ach-card-desc.unlocked { color: #7ec8a0; }
+
+        @-webkit-keyframes legend-glow {
+            0% { box-shadow: 0 0 4px #ff6b6b; }
+            50% { box-shadow: 0 0 16px #ff6b6b; }
+            100% { box-shadow: 0 0 4px #ff6b6b; }
+        }
+        @-moz-keyframes legend-glow {
+            0% { box-shadow: 0 0 4px #ff6b6b; }
+            50% { box-shadow: 0 0 16px #ff6b6b; }
+            100% { box-shadow: 0 0 4px #ff6b6b; }
+        }
+        @keyframes legend-glow {
+            0% { box-shadow: 0 0 4px #ff6b6b; }
+            50% { box-shadow: 0 0 16px #ff6b6b; }
+            100% { box-shadow: 0 0 4px #ff6b6b; }
+        }
+
+        #achievement-grid {
+            display: none;
+            -webkit-flex-direction: column;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            -webkit-flex-wrap: nowrap;
+            -ms-flex-wrap: nowrap;
+            flex-wrap: nowrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        #achievement-grid.compact {
+            -webkit-flex-direction: row;
+            -ms-flex-direction: row;
+            flex-direction: row;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        /* 紧凑模式徽章 */
+        .ach-badge {
+            display: -webkit-inline-box;
+            display: -moz-inline-box;
+            display: -ms-inline-flexbox;
+            display: -webkit-inline-flex;
+            display: inline-flex;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px 3px 6px;
+            border-radius: 20px;
+            font-size: 11px;
+            background: #0a1e26;
+            border: 1px solid #2d5a68;
+            color: #6a8f9a;
+            cursor: default;
+            -webkit-transition: all 0.2s;
+            -moz-transition: all 0.2s;
+            transition: all 0.2s;
+        }
+        .ach-badge:hover { border-color: #3a6b7c; }
+        .ach-badge.unlocked {
+            color: #e0d8c8;
+            background: #1d3f4b;
+        }
+        .ach-badge.unlocked.bronze { border-color: #b08d6b; }
+        .ach-badge.unlocked.silver { border-color: #8aabc0; }
+        .ach-badge.unlocked.gold { border-color: #c9a64a; }
+        .ach-badge.unlocked.legend {
+            border-color: #ff6b6b;
+            -webkit-animation: badge-glow 1.5s infinite;
+            -moz-animation: badge-glow 1.5s infinite;
+            animation: badge-glow 1.5s infinite;
+        }
+        .ach-badge.locked { opacity: 0.4; filter: grayscale(1); }
+        .ach-view-toggle {
+            display: none;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: rgba(180,210,220,0.5);
+            border: 1px solid rgba(180,210,220,0.2);
+            border-radius: 50%;
+            margin-left: 4px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-transition: all 0.2s;
+            -moz-transition: all 0.2s;
+            transition: all 0.2s;
+        }
+        .ach-view-toggle:hover {
+            color: rgba(180,210,220,0.9);
+            border-color: rgba(180,210,220,0.5);
+            background: rgba(180,210,220,0.08);
+        }
+        @-webkit-keyframes badge-glow {
+            0% { box-shadow: 0 0 3px #ff6b6b; }
+            50% { box-shadow: 0 0 10px #ff6b6b; }
+            100% { box-shadow: 0 0 3px #ff6b6b; }
+        }
+        @-moz-keyframes badge-glow {
+            0% { box-shadow: 0 0 3px #ff6b6b; }
+            50% { box-shadow: 0 0 10px #ff6b6b; }
+            100% { box-shadow: 0 0 3px #ff6b6b; }
+        }
+        @keyframes badge-glow {
+            0% { box-shadow: 0 0 3px #ff6b6b; }
+            50% { box-shadow: 0 0 10px #ff6b6b; }
+            100% { box-shadow: 0 0 3px #ff6b6b; }
+        }
+
+        /* ========== Meme tip ========== */
+        #meme-tip {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+
+        /* ========== IE11 Fallback ========== */
+        @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+            #app { background: #0f2d3c; }
+            #choices-container { display: block; }
+            .choice-btn { width: 100%; margin-bottom: 10px; background: #1a3a47; }
+            #stats { display: block; background: #0a1e26; }
+            .stat-item { display: inline-block; width: 30%; min-width: 180px; }
+        }
+
+        /* ========== Responsive ========== */
+        @media screen and (max-width: 600px) {
+            #app { padding: 20px 16px; border-radius: 22px; }
+            #choices-container { grid-template-columns: 1fr; }
+            #choices-container.three-options { grid-template-columns: 1fr; }
+            #choices-container.two-options { grid-template-columns: 1fr; }
+            .choice-btn.span-full { grid-column: 1; }
+            .choice-btn { border-radius: 14px; padding: 14px 16px; }
+            .stat-bar { width: 60px; }
+            #header h1 { font-size: 18px; letter-spacing: 2px; }
+            #story-text { padding: 18px; font-size: 15px; border-radius: 14px; }
+            #stats { border-radius: 14px; padding: 12px 14px; }
+        }
+
+        /* ========== Settings Overlay & Modal ========== */
+        .settings-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .settings-modal {
+            background: #0a1e26;
+            border: 1px solid #1f4350;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 85vh;
+            overflow-y: auto;
+            -webkit-box-shadow: 0 16px 64px rgba(0,0,0,0.7);
+            -moz-box-shadow: 0 16px 64px rgba(0,0,0,0.7);
+            box-shadow: 0 16px 64px rgba(0,0,0,0.7);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            position: relative;
+        }
+        .settings-header {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-pack: justify;
+            -moz-box-pack: justify;
+            -ms-flex-pack: justify;
+            -webkit-justify-content: space-between;
+            justify-content: space-between;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid #1f4350;
+            position: sticky;
+            top: 0;
+            background: #0a1e26;
+            z-index: 2;
+            border-radius: 20px 20px 0 0;
+        }
+        .settings-header h2 {
+            font-size: 18px;
+            color: #d4b87a;
+            letter-spacing: 2px;
+        }
+        .settings-close {
+            cursor: pointer;
+            font-size: 22px;
+            color: rgba(180,210,220,0.6);
+            -webkit-transition: color 0.3s;
+            -moz-transition: color 0.3s;
+            transition: color 0.3s;
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            font-family: inherit;
+        }
+        .settings-close:hover { color: #c9a86c; }
+
+        /* ========== Copyright Modal ========== */
+        .copyright-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 2000;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .copyright-box {
+            background: #0a1e26;
+            border: 1px solid #c9a86c;
+            border-radius: 16px;
+            max-width: 420px;
+            width: 100%;
+            padding: 32px 28px;
+            text-align: center;
+            -webkit-box-shadow: 0 16px 64px rgba(0,0,0,0.8);
+            -moz-box-shadow: 0 16px 64px rgba(0,0,0,0.8);
+            box-shadow: 0 16px 64px rgba(0,0,0,0.8);
+        }
+        .copyright-text {
+            font-size: 20px;
+            color: #d4b87a;
+            letter-spacing: 2px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .copyright-close {
+            cursor: pointer;
+            font-size: 14px;
+            color: #0a1e26;
+            background: #c9a86c;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 28px;
+            letter-spacing: 2px;
+            -webkit-transition: background 0.3s;
+            transition: background 0.3s;
+            font-family: inherit;
+        }
+        .copyright-close:hover { background: #dcc38a; }
+
+        /* ========== Settings Tabs ========== */
+        .settings-tabs {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            border-bottom: 1px solid #1f4350;
+            padding: 0 24px;
+            background: #0a1e26;
+            position: sticky;
+            top: 58px;
+            z-index: 2;
+        }
+        .settings-tab {
+            padding: 12px 18px;
+            cursor: pointer;
+            font-size: 14px;
+            color: rgba(180,210,220,0.5);
+            border-bottom: 2px solid transparent;
+            -webkit-transition: all 0.3s;
+            -moz-transition: all 0.3s;
+            transition: all 0.3s;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .settings-tab:hover { color: rgba(180,210,220,0.8); }
+        .settings-tab.active {
+            color: #c9a86c;
+            border-bottom-color: #c9a86c;
+        }
+        .settings-tab-content {
+            display: none;
+            padding: 20px 24px;
+        }
+        .settings-tab-content.active { display: block; }
+
+        /* ========== Save Slot Cards ========== */
+        .save-slot {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #1f4350;
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+            -webkit-transition: border-color 0.3s;
+            -moz-transition: border-color 0.3s;
+            transition: border-color 0.3s;
+        }
+        .save-slot:hover { border-color: #3a6b7c; }
+        .save-slot-header {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-pack: justify;
+            -moz-box-pack: justify;
+            -ms-flex-pack: justify;
+            -webkit-justify-content: space-between;
+            justify-content: space-between;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .save-slot-name {
+            font-weight: bold;
+            font-size: 15px;
+            color: #e8dcc8;
+        }
+        .save-slot-name .slot-marker {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            background: #c9a86c;
+        }
+        .save-slot-name .slot-marker.empty { background: #3a5a64; }
+        .save-slot-time {
+            font-size: 12px;
+            color: #6a8f9a;
+        }
+        .save-slot-stats {
+            font-size: 13px;
+            color: #8aa9b3;
+            margin: 8px 0;
+        }
+        .save-slot-actions {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            gap: 8px;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .slot-btn {
+            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            color: #c8dde6;
+            cursor: pointer;
+            -webkit-transition: all 0.3s;
+            -moz-transition: all 0.3s;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .slot-btn:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(201,168,108,0.4);
+            -webkit-box-shadow: 0 0 12px rgba(201,168,108,0.1);
+            -moz-box-shadow: 0 0 12px rgba(201,168,108,0.1);
+            box-shadow: 0 0 12px rgba(201,168,108,0.1);
+        }
+        .slot-btn.danger { border-color: rgba(255,99,71,0.3); color: #ff6347; }
+        .slot-btn.danger:hover { border-color: rgba(255,99,71,0.6); background: rgba(255,99,71,0.1); }
+        .slot-btn.primary { border-color: rgba(201,168,108,0.4); color: #d4b87a; }
+        .slot-btn.primary:hover { background: rgba(201,168,108,0.15); }
+        .save-slot-empty {
+            color: #6a8f9a;
+            font-size: 14px;
+            text-align: center;
+            padding: 20px 0;
+        }
+        .save-slot-detail {
+            display: none;
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #0f232b;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #8aa9b3;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .save-slot-detail.open { display: block; }
+        .save-slot-detail .path-label {
+            font-size: 12px;
+            color: #6a8f9a;
+            margin-bottom: 4px;
+        }
+        .save-slot-detail .final-ending {
+            color: #c9a86c;
+            margin-top: 8px;
+            font-weight: bold;
+        }
+        .save-import-export {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            gap: 10px;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #1f4350;
+        }
+        .save-version-info {
+            font-size: 12px;
+            color: #6a8f9a;
+            margin-top: 10px;
+        }
+
+        /* ========== History Timeline ========== */
+        .history-timeline {
+            padding: 0;
+        }
+        .history-summary {
+            font-size: 14px;
+            color: #8aa9b3;
+            margin-bottom: 16px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            border: 1px solid #1f4350;
+        }
+        .history-item {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-align: start;
+            -moz-box-align: start;
+            -ms-flex-align: start;
+            -webkit-align-items: flex-start;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-left: 2px solid #1f4350;
+            padding-left: 16px;
+            margin-left: 8px;
+            position: relative;
+            font-size: 14px;
+            color: #c8dde6;
+        }
+        .history-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 14px;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #1f4350;
+        }
+        .history-item.current {
+            border-left-color: #c9a86c;
+            color: #d4b87a;
+            font-weight: bold;
+        }
+        .history-item.current::before { background: #c9a86c; }
+        .history-item .history-icon {
+            font-size: 18px;
+            -webkit-flex-shrink: 0;
+            -ms-flex-negative: 0;
+            flex-shrink: 0;
+        }
+        .history-actions {
+            margin-top: 16px;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            gap: 10px;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+        }
+
+        /* ========== Game Settings Tab ========== */
+        .setting-row {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-pack: justify;
+            -moz-box-pack: justify;
+            -ms-flex-pack: justify;
+            -webkit-justify-content: space-between;
+            justify-content: space-between;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .setting-row label {
+            font-size: 15px;
+            color: #e8dcc8;
+        }
+        .setting-row .setting-desc {
+            font-size: 12px;
+            color: #6a8f9a;
+            margin-top: 2px;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            display: inline-block;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #1f4350;
+            border-radius: 26px;
+            -webkit-transition: 0.3s;
+            -moz-transition: 0.3s;
+            transition: 0.3s;
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: #c8dde6;
+            border-radius: 50%;
+            -webkit-transition: 0.3s;
+            -moz-transition: 0.3s;
+            transition: 0.3s;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background: #c9a86c;
+        }
+        .toggle-switch input:checked + .toggle-slider::before {
+            -webkit-transform: translateX(24px);
+            -moz-transform: translateX(24px);
+            transform: translateX(24px);
+        }
+        .text-speed-slider {
+            width: 120px;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: #1f4350;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+        .text-speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #c9a86c;
+            cursor: pointer;
+        }
+        .text-speed-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #c9a86c;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* ========== About Tab ========== */
+        .about-content {
+            text-align: center;
+            color: #8aa9b3;
+            line-height: 2;
+            font-size: 14px;
+        }
+        .about-content h3 {
+            font-size: 20px;
+            color: #d4b87a;
+            margin-bottom: 8px;
+            letter-spacing: 3px;
+        }
+        .about-content .about-version {
+            font-size: 13px;
+            color: #6a8f9a;
+            margin-bottom: 16px;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-transition: color 0.3s;
+            transition: color 0.3s;
+        }
+        .about-content .about-version:hover {
+            color: #c9a86c;
+        }
+        .about-content .about-divider {
+            width: 60px;
+            height: 2px;
+            background: #c9a86c;
+            margin: 16px auto;
+            border-radius: 1px;
+        }
+        .about-content .about-section {
+            margin: 12px 0;
+            font-size: 13px;
+            color: #6a8f9a;
+        }
+
+        /* ========== Settings Button in Header ========== */
+        #settings-btn {
+            font-size: 13px;
+            color: rgba(180,210,220,0.8);
+            cursor: pointer;
+            background: rgba(255,255,255,0.06);
+            padding: 8px 16px;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            -webkit-transition: all 0.3s;
+            -moz-transition: all 0.3s;
+            transition: all 0.3s;
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+            margin-left: 6px;
+        }
+        #settings-btn:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(201,168,108,0.4);
+            -webkit-box-shadow: 0 0 16px rgba(201,168,108,0.15);
+            -moz-box-shadow: 0 0 16px rgba(201,168,108,0.15);
+            box-shadow: 0 0 16px rgba(201,168,108,0.15);
+        }
+
+        /* ========== Responsive for Settings ========== */
+        @media screen and (max-width: 600px) {
+            .settings-modal { max-width: 100%; border-radius: 14px; }
+            .settings-tab { padding: 10px 12px; font-size: 12px; }
+            .settings-tab-content { padding: 14px 16px; }
+            .settings-header { padding: 14px 16px 12px; }
+            .settings-header h2 { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+<canvas id="liquid-glass-bg"></canvas>
+<div id="app">
+    <div id="meme-tip" style="display:none;text-align:center;font-size:12px;color:rgba(180,210,220,0.5);margin-bottom:12px;padding:8px 0;">💡 温馨提示：本游戏支持 S/L 大法（存档/读档），打不过就回档，不丢人。</div>
+    <div id="header">
+        <h1>⚓ 老人与海 · 命运之海</h1>
+        <span id="settings-btn" onclick="openSettings('saves')">⚙️ 设置</span>
+        <span id="save-indicator" onclick="saveGame()">💾 存档</span>
+        <span id="file-setup" onclick="initFileSave().then(function(ok){if(ok){saveGameSilent();document.getElementById('file-setup').style.display='none';}})" style="cursor:pointer;font-size:12px;color:rgba(180,210,220,0.4);margin-left:6px;" title="配置文件存储到 save.json">📁</span>
+    </div>
+    <div id="stats">
+        <div class="stat-item"><span class="stat-label">🧠 精神</span><div class="stat-bar"><div id="will-fill" class="stat-fill will" style="width:0%"></div></div><span id="will-val" class="stat-val">0</span></div>
+        <div class="stat-item"><span class="stat-label">💪 体力</span><div class="stat-bar"><div id="sta-fill" class="stat-fill sta" style="width:0%"></div></div><span id="sta-val" class="stat-val">0</span></div>
+        <div class="stat-item"><span class="stat-label">🌊 感悟</span><div class="stat-bar"><div id="ins-fill" class="stat-fill ins" style="width:0%"></div></div><span id="ins-val" class="stat-val">0</span></div>
+        <div class="stat-item" style="margin-left:auto;"><span id="chapter-indicator" style="margin:0;">第一章</span></div>
+    </div>
+    <div id="scene-title">🏝️ 海岸·茅棚</div>
+    <div id="story-text">加载中...</div>
+    <div id="choices-container"></div>
+    <div style="display:-webkit-box;display:-moz-box;display:-ms-flexbox;display:-webkit-flex;display:flex;gap:10px;-webkit-flex-wrap:wrap;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-top:4px;">
+        <button class="restart-btn secondary" onclick="if(confirm('重新出海将重置进度，确定吗？')){restartGame();}">🔄 重开</button>
+        <button class="restart-btn secondary" onclick="loadGame()">📂 读档</button>
+        <span style="-webkit-box-flex:1;-moz-box-flex:1;-ms-flex:1;flex:1;"></span>
+        <span id="ending-progress" style="color:#6a8f9a;font-size:13px;-webkit-align-self:center;-ms-flex-item-align:center;align-self:center;">图鉴：0 / 12</span>
+    </div>
+    <div id="gallery">
+        <div style="display:-webkit-box;display:-moz-box;display:-ms-flexbox;display:-webkit-flex;display:flex;gap:16px;margin-top:12px;border-top:1px solid #1f4350;padding-top:12px;">
+            <span id="gallery-title" onclick="toggleGallery()" style="cursor:pointer;color:#6a8f9a;font-size:14px;">📖 结局图鉴</span>
+            <span id="achievement-title" onclick="toggleAchievement()" style="cursor:pointer;color:#6a8f9a;font-size:14px;">🏅 成就（<span id="ach-count">0</span>/18）</span>
+            <span id="ach-view-toggle" onclick="event.stopPropagation();toggleAchievementView();" class="ach-view-toggle" title="切换列表/图标视图">≡</span>
+        </div>
+        <div id="gallery-grid" style="display:none;"></div>
+        <div id="achievement-grid" style="display:none;"></div>
+    </div>
+</div>
+<script>
+// =============================================================
+//  老人与海 · 命运之海 —— 完整版（30节点, 3~4选项, 12结局）
+//  勘误修复：
+//    1. 移除CSS :has()选择器（IE11/Chrome49不支持），改用JS动态类名
+//    2. 修复隐藏结局E6/E9的触发逻辑，消除竞态条件
+//    3. 过渡节点自动推进时取消pending定时器，避免覆盖结局
+//    4. 添加box-sizing/transition/animation的-webkit-/-moz-前缀
+//    5. 补充IE11 CSS降级方案
+// =============================================================
+
+// ===== 梗模式开关 =====
+var MEME_MODE = true;  // 改为 false 可关闭所有梗植入（课堂严肃模式）
+
+// ---- 游戏状态 ----
+var gameState = {
+    willpower: 1,
+    stamina: 4,
+    insight: 0,
+    flags: [],
+    currentNode: 'N1',
+    history: [],
+    endingsUnlocked: [],
+    playCount: 0,
+    _pendingTransition: null,
+    // 彩蛋追踪
+    _abandonCount: 0,        // 放弃次数（海明威的凝视）
+    _lonerConsecutive: 0,    // 连续独自承担次数（马诺林的手机）
+    _aggressiveCount: 0,     // 激进选项次数
+    _restCount: 0,           // 休息/保守选项次数
+    _lowStaminaCount: 0,     // 体力≤2的节点数
+    _justDidE12: false,      // 刚完成E12（大鱼怨念）
+    _memeN2BChosen: false,   // N2选了B（马诺林的手机前置）
+    // 成就系统
+    achievements: [],
+    achievementProgress: {
+        totalPlaythroughs: 0,
+        totalSaves: 0,
+        totalLoads: 0,
+        sharkFightCount: 0,
+        sharkFleeCount: 0,
+        nodesSurvivedLowStamina: 0,
+        rejectSurrenderCount: 0
+    }
+};
+
+// ---- 成就定义 ----
+var ACHIEVEMENT_LIST = [
+    { id:'A01', name:'初试锋芒', grade:'bronze', desc:'完成任意1个结局', hint:'海的第一课，你已及格。' },
+    { id:'A02', name:'远海行者', grade:'bronze', desc:'累计出海≥3周目', hint:'船底已沾满三个海港的沙。' },
+    { id:'A03', name:'时空旅人', grade:'bronze', desc:'使用存档/读档1次', hint:'你握住了时间的舵盘。' },
+    { id:'A04', name:'坚韧不拔', grade:'silver', desc:'精神值达到上限8', hint:'他的眼里有火，骨里有铁。' },
+    { id:'A05', name:'海之哲人', grade:'silver', desc:'感悟值达到上限5', hint:'你听见了大海深处的回响。' },
+    { id:'A06', name:'残血战神', grade:'silver', desc:'体力≤1且通关(非E3)', hint:'只剩最后一口气，也要把船划回家。' },
+    { id:'A07', name:'S/L大师', grade:'silver', desc:'累计存档/读档≥10次', hint:'你不相信命运，你相信SL。' },
+    { id:'A08', name:'鲨鱼克星', grade:'silver', desc:'鲨鱼节点全选战斗', hint:'鲨鱼们回家做了三天噩梦。' },
+    { id:'A09', name:'和平主义者', grade:'silver', desc:'鲨鱼节点全选放弃', hint:'你放下了屠刀，大海给了你拥抱。' },
+    { id:'A10', name:'狮王传承', grade:'gold', desc:'解锁结局E6', hint:'古老的狮子在梦中低语。' },
+    { id:'A11', name:'慈悲之海', grade:'gold', desc:'解锁结局E12', hint:'放生一条鱼，养起整片海。' },
+    { id:'A12', name:'硬汉之魂', grade:'gold', desc:'解锁结局E1', hint:'一个人可以被毁灭，但不能被打败。' },
+    { id:'A13', name:'海的遗产', grade:'gold', desc:'解锁结局E9', hint:'财富不在手中，而在心里。' },
+    { id:'A14', name:'孤高之王', grade:'silver', desc:'解锁E2且未接受帮助', hint:'王者的路，总是越走越安静。' },
+    { id:'A15', name:'全收集·海王', grade:'legend', desc:'解锁全部12结局', hint:'你读完了海的每一种表情。' },
+    { id:'A16', name:'面面俱到', grade:'gold', desc:'精神≥6，体力≥3，感悟≥4', hint:'勇猛、顽强与智慧，你全都要。' },
+    { id:'A17', name:'极限求生', grade:'legend', desc:'体力≤1存活≥5节点', hint:'在死神的渔网边跳了一支舞。' },
+    { id:'A18', name:'海明威的凝视', grade:'legend', desc:'拒绝投降≥5次且E1结局', hint:'海明威在远方点了点头。' }
+];
+
+var gameData = null;
+var currentNodeObj = null;
+
+// ---- 存储键名 ----
+var SAVE_KEY = 'oldman_sea_destiny_save_v2';
+
+// ---- 新版存档系统常量 ----
+var GAME_VERSION = '3.4.0';
+var SAVE_SLOTS_KEY = 'oldman_sea_slots_v3';
+var SETTINGS_KEY = 'oldman_sea_settings_v3';
+var MAX_SLOTS = 4;
+var SLOT_NAMES = ['自动存档', '快速存档', '手动1', '手动2'];
+
+// ---- 游戏设置 ----
+var gameSettings = {
+    memeMode: true,
+    autoSave: true,
+    soundEnabled: false,
+    liquidGlassEnabled: false,
+    textSpeed: 1.0
+};
+
+// =============================================================
+//  著作权信息（防篡改）
+//  作者姓名不直接以明文存储，采用 Unicode 码点异或混淆
+//  + 校验和双重保护，防止被检索、替换或篡改。
+// =============================================================
+var _Z_ENC = [0x74CA, 0x7EFE, 0x8522];   // 编码后的「曾泊霖」
+var _Z_XOR = 0x1234;                     // 混淆密钥
+var _Z_SIGN = 'ZengBoLin-Build-2026';    // 作者签名（用于校验）
+var _Z_CHECKSUM = 391804;                // 期望校验和（防篡改）
+
+/** 还原作者姓名 */
+function _zAuthor() {
+    var s = '';
+    for (var i = 0; i < _Z_ENC.length; i++) {
+        s += String.fromCharCode(_Z_ENC[i] ^ _Z_XOR);
+    }
+    return s;
+}
+
+/** 生成完整版权声明文本 */
+function _zNotice() {
+    return '此程序由' + _zAuthor() + '构建';
+}
+
+/** 防篡改校验：编码数组与签名联合校验 */
+function _zVerify() {
+    var sum = 0;
+    for (var i = 0; i < _Z_ENC.length; i++) {
+        sum = (sum + _Z_ENC[i] * (i + 3)) % 2147483647;
+    }
+    for (var j = 0; j < _Z_SIGN.length; j++) {
+        sum = (sum + _Z_SIGN.charCodeAt(j)) % 2147483647;
+    }
+    return sum === _Z_CHECKSUM;
+}
+
+// ---- 连续点击版本号触发版权弹窗 ----
+var _zClickCount = 0;
+var _zClickTimer = null;
+
+/** 版本号点击处理（连续点击 5 次触发版权弹窗） */
+function onVersionClick() {
+    _zClickCount++;
+    if (_zClickTimer) clearTimeout(_zClickTimer);
+    _zClickTimer = setTimeout(function () { _zClickCount = 0; }, 2000);
+    if (_zClickCount >= 5) {
+        _zClickCount = 0;
+        showCopyrightModal();
+    }
+}
+
+/** 显示版权弹窗 */
+function showCopyrightModal() {
+    var text = _zVerify() ? _zNotice() : '⚠ 版权信息校验失败，程序可能已被篡改。';
+    var modal = document.getElementById('copyright-modal');
+    var body = document.getElementById('copyright-modal-text');
+    if (modal && body) {
+        body.textContent = text;
+        modal.style.display = 'flex';
+    }
+}
+
+/** 关闭版权弹窗 */
+function closeCopyrightModal() {
+    var modal = document.getElementById('copyright-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+// =============================================================
+//  游戏数据定义
+// =============================================================
+function getDefaultGameData() {
+    return {
+        meta: { startNode: 'N1', maxWill: 8, maxSta: 6, maxIns: 5 },
+        nodes: {
+            // ======== 第一章：老人与孩子 ========
+            'N1': {
+                id: 'N1', scene: '🏝️ 海岸·茅棚', chapter: '第一章',
+                text: '圣地亚哥连续八十四天没捕到鱼。他摸了摸破旧的外套，心想：这要是写简历里，HR得问「空窗期这么久干嘛去了」。今天是第八十五天。\n（据说今年期末考试要考这篇课文，好好玩，就当预习了。）',
+                choices: [
+                    { text: 'A. 「继续卷！只要干不死，就往死里干。」', next: 'N2', deltas: { will: 1, sta: -1 } },
+                    { text: 'B. 「先在近海试试水，稳一手。」', next: 'N2', deltas: { sta: 1, ins: 1 } },
+                    { text: 'C. 「向大海祈祷，万一显灵呢？」', next: 'N2', deltas: { ins: 2 } },
+                    { text: 'D. 「躺平了。这福气给你要不要？」', next: 'E5', deltas: {} }
+                ]
+            },
+            'N2': {
+                id: 'N2', scene: '🏝️ 茅棚门口', chapter: '第一章',
+                text: '马诺林端着黑豆和面包跑来：「我梦见您捕到了比船还大的鱼！好家伙，直接封神！让我跟您去吧。」',
+                choices: [
+                    { text: 'A. 「好孩子，帮我把饵备好，回来给你刷「火箭」（虽然我穷）。」', next: 'N3', deltas: { will: 1 }, flag: 'hasBoy' },
+                    { text: 'B. 「你帮我准备小船，但大鱼归我独自面对。」 ——有限接受', next: 'N3', deltas: { sta: 1 } },
+                    { text: 'C. 「孩子，跟着我只会挨饿。回去吧。」 ——独自扛下', next: 'N3', deltas: { will: 1 }, flag: 'loner' }
+                ]
+            },
+            'N3': {
+                id: 'N3', scene: '⚓ 黎明码头', chapter: '第一章',
+                text: '老人解缆，小船浮在水面。远处海天一线，他必须做出选择。',
+                choices: [
+                    { text: 'A. 「直插远海深处，那里有真正的巨物！」 ——极端远航', next: 'N4', deltas: { will: 1, sta: -2 } },
+                    { text: 'B. 「沿着海流交汇处走，鱼群常在那里聚集。」 ——智慧择路', next: 'N4', deltas: { ins: 1, sta: -1 } },
+                    { text: 'C. 「就在近岸礁石区，安全且有收获。」 ——保守选择', next: 'E4', deltas: { sta: 1 } }
+                ]
+            },
+            'N4': {
+                id: 'N4', scene: '🌊 远海·正午', chapter: '第二章',
+                text: '陆地消失在身后。老人投下钓索，海面平静得诡异，阳光在浪尖上跳跃。',
+                type: 'transition', next: 'N5'
+            },
+
+            // ======== 第二章：再度出海 ========
+            'N5': {
+                id: 'N5', scene: '🌊 烈日下', chapter: '第二章',
+                text: '老人想起四十年前在卡萨布兰卡掰手腕的光景——赢了一个黑人大个子，僵持了一天一夜。那段记忆像火一样温暖着他。',
+                choices: [
+                    { text: 'A. 「我的心和当年一样，从未老过！」 ——豪情不减', next: 'N6', deltas: { will: 2 } },
+                    { text: 'B. 「那是过去了，现在我只想捕鱼糊口。」 ——务实为本', next: 'N6', deltas: { sta: 1 } },
+                    { text: 'C. 「那段荣耀支撑我走到了今天，足够了。」 ——感恩过往', next: 'N6', deltas: { will: 1, ins: 1 } }
+                ]
+            },
+            'N6': {
+                id: 'N6', scene: '🌊 海面', chapter: '第二章',
+                text: '军舰鸟在俯冲——那是鲯鳅在捕食，下面可能有大鱼。老人眯起眼睛，观察着海面的变化。',
+                choices: [
+                    { text: 'A. 「跟着鸟走！直觉从不出错。」 ——凭直觉追踪', next: 'N7', deltas: { ins: 1 } },
+                    { text: 'B. 「观察海水的颜色，找海流交界处。」 ——理性分析', next: 'N7', deltas: { ins: 1, sta: -1 } },
+                    { text: 'C. 「不急，让船自己漂，该来的总会来。」 ——随遇而安', next: 'N8', deltas: { sta: 1 } }
+                ]
+            },
+            'N8': {
+                id: 'N8', scene: '🌊 随波逐流', chapter: '第二章',
+                text: '老人错过了大鱼群，但钓到一条小金枪鱼充饥。他看着海面，耐心等待。',
+                type: 'transition', next: 'N7'
+            },
+            'N7': {
+                id: 'N7', scene: '🎣 傍晚·大鱼咬钩', chapter: '第二章',
+                text: '绿色竿子猛地弯成弓形！底下传来山一样的重量……这手感，赌五毛钱是条SSR级鱼。',
+                choices: [
+                    { text: 'A. 「奥利给！拉它就完了！」', next: 'N9', deltas: { will: 1, sta: -2 } },
+                    { text: 'B. 「先放线，消耗它，这叫「放风筝」战术。」', next: 'N9', deltas: { sta: -1, ins: 1 } },
+                    { text: 'C. 「太大了……我选择「退出房间」。」', next: 'E7', deltas: { sta: 1 } }
+                ]
+            },
+            'N9': {
+                id: 'N9', scene: '🎣 僵持·对话鱼', chapter: '第二章',
+                text: '大鱼拖船游了数海里。老人手心流血，对着水下的影子说话，像对一位老朋友。',
+                choices: [
+                    { text: 'A. 「杀死你是我的至高荣耀！我尊敬你，所以我必须赢。」', next: 'N10', deltas: { will: 2 } },
+                    { text: 'B. 「我们都在为活命拼命，没有对错。」', next: 'N10', deltas: { sta: 1 } },
+                    { text: 'C. 「你是我见过最美的生灵，能与你交手是我的荣幸。」', next: 'N10', deltas: { ins: 2 } }
+                ]
+            },
+            'N10': {
+                id: 'N10', scene: '🌙 第一夜僵持', chapter: '第二章',
+                text: '夜幕降临。左手抽筋，大鱼依然沉稳地拖着小船。老人开始感到体力透支，但眼神依然坚定。',
+                choices: [
+                    { text: 'A. 「就算断手断脚，我也绝不松手！」 ——死守到底（精神+2，体力-2。这种题选「坚持」肯定是送分题，但你的身体已经在抗议了。）', next: 'N11', deltas: { will: 2, sta: -2 } },
+                    { text: 'B. 「把钓索固定在船头，我休息片刻再战。」 ——策略休整', next: 'N11', deltas: { sta: 1, will: 1 } },
+                    { text: 'C. 「今夜放过它，明天再斗。」 ——暂缓进攻', next: 'N11', deltas: { ins: 1 } }
+                ]
+            },
+
+            // ======== 第三章：僵持 ========
+            'N11': {
+                id: 'N11', scene: '🌙 深夜·观星', chapter: '第三章',
+                text: '北极星在闪烁。老人想起马诺林说过：「跟着星星走，就不会迷路。」他抬头望向夜空，感到一种奇异的宁静。',
+                choices: [
+                    { text: 'A. 「跟着北极星走，海会给我方向。」 ——星海导航', next: 'N12', deltas: { will: 1, ins: 1 }, flag: 'starGuide' },
+                    { text: 'B. 「用伤口磨破的痛感撑着，绝不闭眼。」 ——自残坚守', next: 'N13', deltas: { will: 2, sta: -1 } },
+                    { text: 'C. 「吟唱回蓝中……闭眼歇两小时，让左手恢复一下。」 ——有限休整（体力+1）', next: 'N13', deltas: { sta: 1 } }
+                ]
+            },
+            'N12': {
+                id: 'N12', scene: '✨ 星海指引', chapter: '第三章',
+                text: '老人感到奇异的平静，大鱼跃出水面，鳞光如星河般璀璨。那一刻，大海和天空合为一体。',
+                type: 'transition', next: 'N13'
+            },
+            'N13': {
+                id: 'N13', scene: '🌅 第二天黎明', chapter: '第三章',
+                text: '太阳升起，大鱼还在船底沉着地游着。它也没有放弃。老人笑了：「我们都是倔脾气。」',
+                type: 'transition', next: 'N14'
+            },
+            'N14': {
+                id: 'N14', scene: '🍣 生鱼充饥', chapter: '第三章',
+                text: '老人切了生金枪鱼，嚼了两口，心想：比学校食堂还难吃，但为了活着，忍了。',
+                choices: [
+                    { text: 'A. 「大口干饭！把蓝条（体力）回满！」', next: 'N15', deltas: { sta: 1 } },
+                    { text: 'B. 「细嚼慢咽，品出大海的味道。」', next: 'N15', deltas: { sta: 1, ins: 1 } },
+                    { text: 'C. 「分一半扔回海里，敬这波「大自然的馈赠」。」', next: 'N15', deltas: { ins: 2 } },
+                    { text: 'D. 「放下刀……我蚌埠住了。」', next: 'E12', deltas: { ins: 2 } }
+                ]
+            },
+            'N15': {
+                id: 'N15', scene: '🐟 大鱼跃水', chapter: '第三章',
+                text: '大鱼跃出水面——银光闪烁，身长十八英尺，美得令人窒息。老人从未见过如此壮丽的生灵。',
+                choices: [
+                    { text: 'A. 「太美了！我一生都在找这样的对手。」 ——赞叹生命', next: 'N16', deltas: { ins: 2 } },
+                    { text: 'B. 「它没力气了！就是现在，刺！」 ——抓住战机', next: 'N16', deltas: { will: 1 } },
+                    { text: 'C. 「绕到它侧面，避开正面冲击。」 ——谨慎周旋', next: 'N16', deltas: { sta: -1, ins: 1 } }
+                ]
+            },
+            'N16': {
+                id: 'N16', scene: '⚔️ 最后一击', chapter: '第三章',
+                text: '大鱼转圈靠近，圈子越来越小。老人举起鱼叉，瞄准心脏的位置。一生的经验，都凝聚在这一刺之中。',
+                type: 'transition', next: 'N16_5'
+            },
+            'N16_5': {
+                id: 'N16_5', scene: '🏆 猎杀成功', chapter: '第三章',
+                text: '大鱼死了——身长十八英尺，重一千五百磅。老人瘫坐在船板上，望着这巨大的银色身躯，百感交集。',
+                type: 'transition', next: 'N17'
+            },
+
+            // ======== 第四章：力搏群鲨 ========
+            'N17': {
+                id: 'N17', scene: '⛵ 返航·孤独', chapter: '第四章',
+                text: '大鱼的血在海中拖出一道红痕。老人掌舵返航，心中既骄傲又不安。他望着远方，海风咸涩。',
+                choices: [
+                    { text: 'A. 「要是那孩子在这儿就好了！他该看看这条鱼。」', next: 'N18', deltas: { will: 1 }, flag: 'missBoy' },
+                    { text: 'B. 「这是我一个人的海，一个人的胜利。」', next: 'N18', deltas: {}, flag: 'loner' },
+                    { text: 'C. 「这条鱼的血会引来鲨鱼……我得做好准备。」', next: 'N18', deltas: { ins: 1 } }
+                ]
+            },
+            'N18': {
+                id: 'N18', scene: '🦈 灰鲭鲨初袭', chapter: '第四章',
+                text: '第一条鲨鱼来了！它像极了周一的早高峰地铁——上来就抢。它从深海窜出，狠狠咬住大鱼尾部，撕下一大块肉。',
+                choices: [
+                    { text: 'A. 「掷出鱼叉，一击刺穿它的脑颅！扎心了老铁！」', next: 'N19', deltas: { will: 1, sta: -1 } },
+                    { text: 'B. 「用桨拍水吓退它。鲨鱼：你礼貌吗？」', next: 'N19', deltas: { sta: 1, ins: 1 } },
+                    { text: 'C. 「割下大鱼尾部肉块扔远，引开鲨鱼。」 ——金蝉脱壳', next: 'N19', deltas: { ins: 1 } },
+                    { text: 'D. 「算了……鱼肉保不住了，随它吃吧。」 ——彻底放弃', next: 'E8', deltas: {} }
+                ]
+            },
+            'N19': {
+                id: 'N19', scene: '🦈 失去鱼叉', chapter: '第四章',
+                text: '第二条鲨鱼来袭，鱼叉卡在骨缝里拔不出。老人把刀绑在桨柄上，准备迎接新的战斗。',
+                choices: [
+                    { text: 'A. 「用刀刺！我还有力气！」 ——继续战斗', next: 'N20', deltas: { will: 1, sta: -1 } },
+                    { text: 'B. 「砍断绑鱼索，让鲨鱼啃骨架，我们走。」 ——舍弃鱼肉', next: 'N20', deltas: { ins: 1 } },
+                    { text: 'C. 「放弃吧……太累了，不值得了。」 ——放弃战斗', next: 'E8', deltas: { sta: 1 } }
+                ]
+            },
+            'N20': {
+                id: 'N20', scene: '🦈 铲鼻鲨群', chapter: '第四章',
+                text: '鲨鱼接踵而至，海水染红。老人挥舞断桨，步步后退，但眼神依然不屈。',
+                choices: [
+                    { text: 'A. 「来啊！我还没死！拼了！」 ——舍身血战', next: 'N21', deltas: { will: 1, sta: -2 } },
+                    { text: 'B. 「用碎玻璃划伤它们，以守为攻。」 ——巧妙应对', next: 'N21', deltas: { sta: -1, ins: 1 } },
+                    { text: 'C. 「躺平，让它们吃，保命要紧。」 ——放弃抵抗', next: 'E3', deltas: { sta: 1 } }
+                ]
+            },
+            'N21': {
+                id: 'N21', scene: '🦈 舵把', chapter: '第四章',
+                text: '最后的武器——舵把。老人拆下它，握在手中。这是最后的防线。',
+                type: 'transition', next: 'N22'
+            },
+            'N22': {
+                id: 'N22', scene: '🌌 鲨鱼群夜袭', chapter: '第四章',
+                text: '密密麻麻的鲨鱼鳍从四面八方涌来，大鱼只剩半副骨架。老人知道，这是最后的战斗了。',
+                choices: [
+                    { text: 'A. 「用舵把猛砸！跟它们同归于尽！」 ——舍身血战', next: 'N23', deltas: { will: 2, sta: -3 } },
+                    { text: 'B. 「站到船中央，用气势逼退鲨鱼。」 ——王霸之气', next: 'N23', deltas: { will: 1, sta: -1 } },
+                    { text: 'C. 「把剩余的鱼肉全割下来扔出去，喂饱它们。」 ——舍肉保命（解锁隐藏标签：用食物驯服野生生物）', next: 'N23', deltas: { sta: 1, ins: 1 } },
+                    { text: 'D. 「躺下装死，等鲨鱼自己散去。」 ——极智求生', next: 'E3', deltas: { ins: 2 } }
+                ]
+            },
+            'N23': {
+                id: 'N23', scene: '🌅 黎明·血战', chapter: '第四章',
+                text: '老人用拳头砸鲨鱼，皮开肉绽。大鱼只剩白森森的骨架，在晨光中泛着贝光。',
+                type: 'transition', next: 'N24'
+            },
+            'N24': {
+                id: 'N24', scene: '⛅ 黎明·残骸', chapter: '第四章',
+                text: '太阳升起，船边只有一副巨大的白色鱼骨，在晨光中闪着银白色的光芒，像一个沉默的宣言。',
+                type: 'transition', next: 'N25'
+            },
+
+            // ======== 第五章：归港 ========
+            'N25': {
+                id: 'N25', scene: '🏘️ 归港', chapter: '第五章',
+                text: '渔船驶入港口。众人围观十八英尺的鱼骨，惊叹不已。全村人都破防了，直呼：「这老头才是真正的YYDS！」老人蹒跚下船，望向人群。',
+                choices: [
+                    { text: 'A. 「大声喊：我，圣地亚哥，打钱！」 ——傲然宣告', next: 'E1', deltas: { will: 1 } },
+                    { text: 'B. 「只是一副骨头罢了，没什么好看的。」 ——低调谦逊', next: 'E2', deltas: { ins: 1 } },
+                    { text: 'C. 「这鱼骨不属于我，属于这片海。」 ——返璞归真', next: 'E9', deltas: { ins: 2 } }
+                ]
+            }
+        },
+
+        // ---- 结局数据 ----
+        endings: {
+            'E1': {
+                id: 'E1', title: '硬汉的荣耀', grade: 'gold',
+                text: '码头上，老人嘶哑地讲述搏斗故事。马诺林挤出人群抱住他痛哭：「我就知道您能行！」\n\n那晚老人梦见金色沙滩上的狮子。第二天一早，马诺林备好了船：「爷爷，我们什么时候出发？」\n\n老人笑了：「今天。」\n\n「人可以被毁灭，但不能被打败。」\n\n📱 弹幕彩蛋：\n- 「666，这操作我学不来。」\n- 「老人：只要我够硬，鲨鱼就卷不动我。」'
+            },
+            'E2': {
+                id: 'E2', title: '孤独的雄狮', grade: 'silver',
+                text: '老人沉默穿过人群，回到茅棚倒下。\n\n他不需要喝彩，那副鱼骨就是纪念碑。梦里狮子静静坐着，像古老雕像。\n\n有些胜利，只属于自己。'
+            },
+            'E3': {
+                id: 'E3', title: '海之归途', grade: 'blue',
+                text: '老人眼前一黑倒在船板上。鲨鱼啃食大鱼，他却感觉不到痛了。\n\n醒来时已躺在岸上，马诺林端来鱼汤：「您漂了一天一夜……」\n\n大鱼没了，但命还在。他望着海说：「我们扯平了。」'
+            },
+            'E4': {
+                id: 'E4', title: '近海的平庸', grade: 'gray',
+                text: '老人在近海捕了鲯鳅和金枪鱼，勉强糊口。\n\n回港时见别人拖着巨大鱼骨靠岸。他坐在码头抽烟，知道那条属于他的大鱼游过了别人船底。\n\n安全，让他错过了一生的传奇。\n\n📝 这个故事告诉我们——选择比努力更重要，但如果你不选远海，连努力的资格都没有。这道题，选C的扣分。'
+            },
+            'E5': {
+                id: 'E5', title: '放弃者的港湾', grade: 'dark',
+                text: '老人把船拖上岸，帆收进木箱，再没解开船缆。\n\n马诺林每日送饭，他只是发呆。几个月后，人们发现他安详地躺在床上，手里攥着一根旧钓索。\n\n那条鱼，或许还在深海里等他。'
+            },
+            'E6': {
+                id: 'E6', title: '狮子的传人', grade: 'orange',
+                text: '老人神志模糊地回港，看到马诺林，他挺直腰板，把断掉的鱼叉递过去：「拿着，这是狮子的牙齿。」\n\n马诺林接过的眼神坚定如海。那晚老人梦见自己站在岸上，看着马诺林在海上与银色大鱼搏斗。\n\n传承，比胜利更伟大。'
+            },
+            'E7': {
+                id: 'E7', title: '梦中的狮子', grade: 'purple',
+                text: '老人割断钓索。大鱼带着鱼钩沉入深渊。他空船回港，面色平静。\n\n那夜他梦见自己坐在沙滩上，看狮子追逐海浪。他是自由的，鱼也是自由的。\n\n有些鱼，注定不该被捕获。\n\n🦁 梦中的狮子，像极了考场上最后那道怎么也解不出来的大题。你放弃了它，但它在梦里追着你跑。'
+            },
+            'E8': {
+                id: 'E8', title: '大海的谅解', grade: 'green',
+                text: '老人放下武器。鲨鱼吃光了鱼肉，只剩白骨。\n\n他对海说：「你给了我鱼，又拿走了它。我们扯平了。」\n\n此后他每天出海，不求大鱼，只求待在海上。大海是他的老友。'
+            },
+            'E9': {
+                id: 'E9', title: '渔夫的遗产', grade: 'gold',
+                text: '老人指着鱼骨说：「它属于海。」众人沉默。\n\n马诺林问：「那您属于哪里？」\n\n老人拍了拍小船：「属于这趟还没走完的路。」\n\n他把卖鱼骨的钱换了新船，送给马诺林，自己仍用旧船出海，每日对着大海说话。'
+            },
+            'E10': {
+                id: 'E10', title: '东方之星', grade: 'red',
+                text: '老人错过鱼群，却跟随东方之星找到新海域，用一根新钓索在黎明前钓到三条大鱼。\n\n回港时船几乎沉没。村里人称他「星之子」。\n\n他笑着摇头：「是星星指了路。」'
+            },
+            'E11': {
+                id: 'E11', title: '永恒的搏斗', grade: 'cyan',
+                text: '老人修好船，补好帆。马诺林拿着沙丁鱼饵问：「爷爷，今天去哪里？」\n\n老人望向无尽的大海：「去远海。有鱼在等我。」\n\n小船驶出港口，驶向深蓝。故事没有结束，因为大海永远不会结束。\n\n🎮 系统提示：你成功触发了「二周目」循环。此刻你不是渔夫，你是「SL大法」的传人。\n这游戏没有坏结局，只有还没读档的玩家。'
+            },
+            'E12': {
+                id: 'E12', title: '鱼之泪', grade: 'pink',
+                text: '老人放下刀，割断钓索：「走吧，鱼，你自由了。」\n\n大鱼浮上来看了他一眼，然后缓缓沉入海中。\n\n从此老人出海不再用带倒刺的钩，只钓吃不完的小鱼，大的都放回去。\n\n村里人说他疯了，他却说：「我从没这么清醒过。」\n\n📝 放走大鱼，相当于考试时主动放弃最后一道加分题。但你获得了「慈悲」的平时分。老师评语：该生心态良好，建议保研。'
+            }
+        }
+    };
+}
+
+// =============================================================
+//  游戏引擎
+// =============================================================
+
+/** 取消待执行的过渡 */
+function cancelPendingTransition() {
+    if (gameState._pendingTransition) {
+        clearTimeout(gameState._pendingTransition);
+        gameState._pendingTransition = null;
+    }
+}
+
+/** 初始化游戏 */
+async function initGame() {
+    initSettings();
+    if (!gameData) gameData = getDefaultGameData();
+
+    // 优先从 save.json 文件恢复（如果之前配置过）
+    _saveFileHandle = await restoreFileHandle();
+    if (_saveFileHandle) {
+        // 隐藏文件设置入口
+        var fsIndicator = document.getElementById('file-setup');
+        if (fsIndicator) fsIndicator.style.display = 'none';
+        try {
+            var fileSave = await readSaveFile();
+            if (fileSave && fileSave.state) {
+                gameState = fileSave.state;
+                // 兼容旧存档
+                if (typeof gameState.insight === 'undefined') gameState.insight = 0;
+                if (!gameState.flags) gameState.flags = [];
+                if (!gameState.history) gameState.history = [];
+                if (!gameState.endingsUnlocked) gameState.endingsUnlocked = [];
+                if (!gameState.achievements) gameState.achievements = [];
+                if (!gameState.achievementProgress) {
+                    gameState.achievementProgress = {
+                        totalPlaythroughs: 0, totalSaves: 0, totalLoads: 0,
+                        sharkFightCount: 0, sharkFleeCount: 0,
+                        nodesSurvivedLowStamina: 0, rejectSurrenderCount: 0
+                    };
+                }
+                gameState._pendingTransition = null;
+                // 同步到 localStorage
+                localStorage.setItem(SAVE_KEY, JSON.stringify({ state: gameState }));
+            }
+        } catch (e) { /* 文件读取失败，回退到 localStorage */ }
+    }
+
+    // 如果文件加载失败，从 localStorage 恢复
+    if (!gameState.endingsUnlocked || gameState.endingsUnlocked.length === 0) {
+        try {
+            var raw = localStorage.getItem(SAVE_KEY);
+            if (raw) {
+                var save = JSON.parse(raw);
+                if (save && save.state) {
+                    gameState = save.state;
+                    if (typeof gameState.insight === 'undefined') gameState.insight = 0;
+                    if (!gameState.flags) gameState.flags = [];
+                    if (!gameState.history) gameState.history = [];
+                    if (!gameState.endingsUnlocked) gameState.endingsUnlocked = [];
+                    if (!gameState.achievements) gameState.achievements = [];
+                    if (!gameState.achievementProgress) {
+                        gameState.achievementProgress = {
+                            totalPlaythroughs: 0, totalSaves: 0, totalLoads: 0,
+                            sharkFightCount: 0, sharkFleeCount: 0,
+                            nodesSurvivedLowStamina: 0, rejectSurrenderCount: 0
+                        };
+                    }
+                    gameState._pendingTransition = null;
+                }
+            }
+        } catch (e) { /* 静默失败 */ }
+    }
+
+    if (gameState.playCount > 0) {
+        gameState.willpower += 1;
+        if (gameState.willpower > gameData.meta.maxWill) gameState.willpower = gameData.meta.maxWill;
+    }
+    renderNode(gameState.currentNode);
+    updateUI();
+}
+
+/** 渲染节点 */
+function renderNode(nodeId) {
+    // 取消之前的过渡
+    cancelPendingTransition();
+    // 重置隐藏结局标记，防止旧值残留导致错误跳转
+    gameState._hiddenEnding = null;
+
+    var node = gameData.nodes[nodeId];
+    if (!node) {
+        // 可能是一个结局ID
+        if (gameData.endings[nodeId]) {
+            renderEnding(nodeId);
+            return;
+        }
+        node = gameData.nodes['N1'];
+    }
+
+    currentNodeObj = node;
+    gameState.currentNode = nodeId;
+    gameState.history.push(nodeId);
+
+    // 低体力存活追踪（A17）
+    if (gameState.stamina <= 1) {
+        gameState.achievementProgress.nodesSurvivedLowStamina = (gameState.achievementProgress.nodesSurvivedLowStamina || 0) + 1;
+    }
+
+    // 更新场景和章节
+    document.getElementById('scene-title').textContent = node.scene || '大海';
+    document.getElementById('chapter-indicator').textContent = node.chapter || '第一章';
+
+    // 渲染文本
+    var text = node.text || '';
+    // 主角光环彩蛋：精神>=7时随机插入旁白
+    if (MEME_MODE && gameState.willpower >= 7 && node.type !== 'transition' && nodeId.charAt(0) !== 'E') {
+        if (Math.random() < 0.25) {
+            text += '\n\n✨ 这一刻，他不是一个人在战斗，诺贝尔文学奖得主海明威的灵魂附体了！';
+        }
+    }
+    document.getElementById('story-text').textContent = text;
+
+    // 渲染选项容器
+    var container = document.getElementById('choices-container');
+    container.innerHTML = '';
+
+    // 如果是结局
+    if (nodeId.charAt(0) === 'E') {
+        renderEnding(nodeId);
+        return;
+    }
+
+    // 检查隐藏结局触发（对过渡节点也有效）
+    gameState._hiddenEnding = null;
+    checkHiddenEndings(nodeId);
+
+    // 如果是过渡节点
+    if (node.type === 'transition' && node.next) {
+        container.innerHTML = '<p class="transition-text">⏳ 命运流转...</p>';
+        sfxTransition();
+        var transTarget = gameState._hiddenEnding || node.next;
+        gameState._hiddenEnding = null;
+        gameState._pendingTransition = setTimeout(function () {
+            gameState._pendingTransition = null;
+            renderNode(transTarget);
+        }, 2500);
+        saveGameSilent();
+        updateUI();
+        return;
+    }
+
+    // 渲染选项按钮
+    if (node.choices && node.choices.length > 0) {
+        // E11: 永恒的搏斗 —— 多周目后N1出现特殊选项
+        if (nodeId === 'N1' && (gameState.endingsUnlocked || []).length >= 2) {
+            // 检查是否已有E11选项，避免重复添加
+            var hasE11 = false;
+            for (var ck = 0; ck < node.choices.length; ck++) {
+                if (node.choices[ck].next === 'E11') { hasE11 = true; break; }
+            }
+            if (!hasE11) {
+                node.choices.push({
+                    text: '🌟 「打点行装，再次挑战远海。大海在等我。」 ——永恒循环',
+                    next: 'E11',
+                    deltas: { will: 2, ins: 2 }
+                });
+            }
+        }
+        var count = node.choices.length;
+
+        // 根据选项数量设置CSS类名
+        container.className = '';
+        if (count === 1) {
+            container.className = 'one-option';
+        } else if (count === 2) {
+            container.className = 'two-options';
+        } else if (count === 3) {
+            container.className = 'three-options';
+        }
+        // 4个选项保持默认grid（2x2）
+
+        for (var i = 0; i < count; i++) {
+            var c = node.choices[i];
+            var btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.textContent = c.text;
+
+            // 3个选项时，第3个跨两列
+            if (count === 3 && i === 2) {
+                btn.className += ' span-full';
+            }
+
+            btn.setAttribute('data-idx', i);
+            btn.onclick = (function (idx) {
+                return function () { makeChoice(idx); };
+            })(i);
+            container.appendChild(btn);
+        }
+    }
+
+    saveGameSilent();
+    updateUI();
+}
+
+/** 检查隐藏结局触发条件 */
+function checkHiddenEndings(nodeId) {
+    // E6: 狮子的传人 —— 在N16_5过渡到N17时检查
+    // 条件：有hasBoy标记 + 精神>=5 + 体力<=1
+    if (nodeId === 'N16_5') {
+        var hasBoy = false;
+        for (var f = 0; f < gameState.flags.length; f++) {
+            if (gameState.flags[f] === 'hasBoy') { hasBoy = true; break; }
+        }
+        if (gameState.willpower >= 5 && gameState.stamina <= 1 && hasBoy) {
+            gameState._hiddenEnding = 'E6';
+            return;
+        }
+    }
+
+    // E9: 渔夫的遗产 —— 在N13过渡到N14前检查
+    // 条件：感悟>=3 + 精神>=5
+    if (nodeId === 'N13') {
+        if (gameState.insight >= 3 && gameState.willpower >= 5) {
+            gameState._hiddenEnding = 'E9';
+            return;
+        }
+    }
+
+    // E10: 东方之星 —— 在N12（星海指引）过渡时检查
+    // 条件：N11选了星海导航（flag: starGuide）+ 感悟>=4
+    if (nodeId === 'N12') {
+        var hasStarGuide = false;
+        for (var f2 = 0; f2 < gameState.flags.length; f2++) {
+            if (gameState.flags[f2] === 'starGuide') { hasStarGuide = true; break; }
+        }
+        if (hasStarGuide && gameState.insight >= 4) {
+            gameState._hiddenEnding = 'E10';
+            return;
+        }
+    }
+}
+
+/** 处理选择 */
+function makeChoice(index) {
+    cancelPendingTransition();
+    sfxChoice();
+
+    var node = currentNodeObj;
+    if (!node || !node.choices) return;
+
+    var choice = node.choices[index];
+    if (!choice) return;
+
+    // ---- 彩蛋追踪 ----
+    // 追踪激进/保守选项
+    if (choice.deltas) {
+        if (choice.deltas.will && choice.deltas.will >= 2) gameState._aggressiveCount++;
+        if (choice.deltas.sta && choice.deltas.sta >= 1 && !choice.deltas.will) gameState._restCount++;
+    }
+
+    // 追踪放弃次数（海明威的凝视）
+    if (choice.next && choice.next.charAt(0) === 'E' && choice.next !== 'E6' && choice.next !== 'E9') {
+        gameState._abandonCount++;
+        if (MEME_MODE && gameState._abandonCount >= 2) {
+            var mt = document.getElementById('meme-tip');
+            if (mt) {
+                mt.textContent = '💡 海明威看了想打人。不过他说了，你可以被毁灭，但不能被打败。';
+                mt.style.display = 'block';
+                clearTimeout(mt._timer);
+                mt._timer = setTimeout(function () { mt.style.display = 'none'; }, 4000);
+            }
+        }
+    }
+
+    // 追踪N2选B（马诺林的手机前置）
+    if (node.id === 'N2' && index === 1) {
+        gameState._memeN2BChosen = true;
+    }
+
+    // 追踪连续独自承担（马诺林的手机）
+    if (choice.flag === 'loner') {
+        gameState._lonerConsecutive++;
+        if (MEME_MODE && gameState._memeN2BChosen && gameState._lonerConsecutive >= 3) {
+            var memeText = '马诺林在远处掏出贝壳手机（脑补）发消息：「爷爷又在装酷了，我要不要告诉他其实我偷偷跟着他？」';
+            document.getElementById('story-text').textContent = document.getElementById('story-text').textContent + '\n\n📱 ' + memeText;
+        }
+    } else {
+        gameState._lonerConsecutive = 0;
+    }
+
+    // 追踪低体力节点
+    if (gameState.stamina <= 2) gameState._lowStaminaCount++;
+
+    // ---- 成就追踪 ----
+    var choiceText = choice.text || '';
+    // 鲨鱼节点选择追踪（A08/A09）
+    var sharkNodes = ['N18', 'N19', 'N20', 'N22'];
+    if (sharkNodes.indexOf(node.id) !== -1) {
+        sfxShark();
+        var isFight = choiceText.indexOf('战斗') !== -1 || choiceText.indexOf('刺') !== -1 ||
+                       choiceText.indexOf('砸') !== -1 || choiceText.indexOf('拼') !== -1 ||
+                       choiceText.indexOf('硬') !== -1 || choiceText.indexOf('搏') !== -1;
+        var isFlee = choiceText.indexOf('放弃') !== -1 || choiceText.indexOf('保命') !== -1 ||
+                      choiceText.indexOf('躺') !== -1 || choiceText.indexOf('算了') !== -1 ||
+                      choiceText.indexOf('溜') !== -1 || choiceText.indexOf('退') !== -1;
+        if (isFight) gameState.achievementProgress.sharkFightCount = (gameState.achievementProgress.sharkFightCount || 0) + 1;
+        if (isFlee) gameState.achievementProgress.sharkFleeCount = (gameState.achievementProgress.sharkFleeCount || 0) + 1;
+    }
+    // 拒绝投降追踪（A18）：非放弃类选项
+    if (choiceText.indexOf('放弃') === -1 && choiceText.indexOf('保命') === -1 &&
+        choiceText.indexOf('算了') === -1 && choiceText.indexOf('躺') === -1) {
+        gameState.achievementProgress.rejectSurrenderCount = (gameState.achievementProgress.rejectSurrenderCount || 0) + 1;
+    }
+
+    // 应用属性变化
+    if (choice.deltas) {
+        if (choice.deltas.will) gameState.willpower += choice.deltas.will;
+        if (choice.deltas.sta) gameState.stamina += choice.deltas.sta;
+        if (choice.deltas.ins) gameState.insight += choice.deltas.ins;
+    }
+
+    // 限制属性范围
+    gameState.willpower = Math.max(0, Math.min(gameData.meta.maxWill, gameState.willpower));
+    gameState.stamina = Math.max(0, Math.min(gameData.meta.maxSta, gameState.stamina));
+    gameState.insight = Math.max(0, Math.min(gameData.meta.maxIns, gameState.insight));
+
+    // 添加标记
+    if (choice.flag) {
+        gameState.flags.push(choice.flag);
+    }
+
+    // 体力归零时触发E3（但若下一节点或其后继节点有通往结局的选项，允许玩家继续）
+    if (gameState.stamina <= 0 && choice.next && choice.next.charAt(0) !== 'E') {
+        sfxDanger();
+        // 沿过渡节点链查找，直到找到有选项的节点或链结束
+        var hasEndingOption = false;
+        var checkId = choice.next;
+        var maxDepth = 20; // 安全上限，防止意外死循环
+        for (var depth = 0; depth < maxDepth && checkId; depth++) {
+            var checkNode = gameData.nodes[checkId];
+            if (!checkNode) break;
+            // 检查N16_5：如果满足E6条件，允许继续
+            if (checkId === 'N16_5') {
+                var hasBoy2 = false;
+                for (var fb = 0; fb < gameState.flags.length; fb++) {
+                    if (gameState.flags[fb] === 'hasBoy') { hasBoy2 = true; break; }
+                }
+                if (hasBoy2 && gameState.willpower >= 5) {
+                    hasEndingOption = true;
+                    break;
+                }
+            }
+            if (checkNode.choices && checkNode.choices.length > 0) {
+                for (var ci = 0; ci < checkNode.choices.length; ci++) {
+                    if (checkNode.choices[ci].next && checkNode.choices[ci].next.charAt(0) === 'E') {
+                        hasEndingOption = true;
+                        break;
+                    }
+                }
+                break; // 找到有选项的节点，停止查找
+            }
+            // 过渡节点，继续沿链查找
+            checkId = checkNode.next;
+        }
+        if (!hasEndingOption) {
+            gameState._abandonCount++; // 体力归零也算一种"放弃"
+            sfxDeath();
+            renderNode('E3');
+            return;
+        }
+        // 后继节点有结局选项，允许玩家继续（体力保持0，结局选项的deltas会处理）
+    }
+
+    if (choice.next) {
+        renderNode(choice.next);
+    }
+    updateUI();
+    checkAchievements();
+}
+
+/** 渲染结局 */
+function renderEnding(endingId) {
+    cancelPendingTransition();
+
+    var ending = gameData.endings[endingId];
+    if (!ending) return;
+
+    // 播放结局音效
+    sfxEnding(ending.grade === 'gold' || ending.grade === 'silver');
+
+    // 记录解锁
+    var already = false;
+    for (var i = 0; i < gameState.endingsUnlocked.length; i++) {
+        if (gameState.endingsUnlocked[i] === endingId) { already = true; break; }
+    }
+    if (!already) {
+        gameState.endingsUnlocked.push(endingId);
+    }
+
+    // 追踪E12完成（轮回·慈悲者）
+    if (endingId === 'E12') {
+        gameState._justDidE12 = true;
+    }
+
+    // 追踪E2无帮助解锁（A14孤高之王）
+    if (endingId === 'E2') {
+        var hasBoyFlag = false;
+        for (var f2 = 0; f2 < gameState.flags.length; f2++) {
+            if (gameState.flags[f2] === 'hasBoy') { hasBoyFlag = true; break; }
+        }
+        if (!hasBoyFlag) {
+            gameState.achievementProgress._e2NoBoy = true;
+        }
+    }
+
+    // 成就追踪：通关次数
+    gameState.achievementProgress.totalPlaythroughs = (gameState.achievementProgress.totalPlaythroughs || 0) + 1;
+
+    // 更新场景
+    document.getElementById('scene-title').textContent = '🏆 结局';
+    document.getElementById('chapter-indicator').textContent = '终章';
+
+    var container = document.getElementById('choices-container');
+    container.innerHTML = '';
+    container.className = '';
+
+    // 结局标题
+    var title = document.createElement('div');
+    title.className = 'ending-title ' + (ending.grade || '');
+    title.textContent = '🏆 ' + ending.title;
+    container.appendChild(title);
+
+    // 结局等级
+    var grade = document.createElement('div');
+    grade.className = 'ending-grade';
+    grade.textContent = '✦ ' + ((ending.grade || '').toUpperCase()) + ' ENDING';
+    container.appendChild(grade);
+
+    // 结局文本
+    var p = document.createElement('p');
+    p.style.cssText = 'background:rgba(255,255,255,0.03);padding:22px 24px;border-radius:18px;line-height:2;font-size:15px;border:1px solid rgba(255,255,255,0.05);border-left:3px solid rgba(201,168,108,0.5);white-space:pre-wrap;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);';
+    var text = ending.text || '...';
+    // E3血条提示（梗模式）
+    if (MEME_MODE && endingId === 'E3') {
+        text += '\n\n💔 系统提示：您的「血条」已空。您已进入残血模式，建议原地休息。';
+    }
+    // E6隐藏成就提示（梗模式）
+    if (MEME_MODE && endingId === 'E6') {
+        text += '\n\n🎉 隐藏成就解锁：「狮王传承」\n条件：精神≥5，体力≤1，且接受过男孩帮助。\n奖励：下个周目初始精神+2（虽然并没有什么用，但帅啊）。';
+    }
+    p.textContent = text;
+    container.appendChild(p);
+
+    // 按钮组
+    var grp = document.createElement('div');
+    grp.style.cssText = 'margin-top:16px;display:-webkit-box;display:-moz-box;display:-ms-flexbox;display:-webkit-flex;display:flex;gap:12px;-webkit-flex-wrap:wrap;-ms-flex-wrap:wrap;flex-wrap:wrap;';
+
+    var btn1 = document.createElement('button');
+    btn1.className = 'restart-btn';
+    btn1.textContent = '⚓ 再次出海';
+    btn1.onclick = function () {
+        gameState.playCount++;
+        restartGame();
+    };
+    grp.appendChild(btn1);
+
+    // E11特殊：继承数值继续
+    if (endingId === 'E11') {
+        var btn2 = document.createElement('button');
+        btn2.className = 'restart-btn secondary';
+        btn2.textContent = '🌀 继续航行（继承数值）';
+        btn2.onclick = function () {
+            gameState.willpower = Math.floor(gameState.willpower / 2);
+            gameState.stamina = Math.floor(gameState.stamina / 2) + 1;
+            gameState.insight = Math.floor(gameState.insight / 2);
+            gameState.currentNode = 'N1';
+            gameState.history = [];
+            renderNode('N1');
+            updateUI();
+        };
+        grp.appendChild(btn2);
+    }
+
+    container.appendChild(grp);
+
+    // ---- 成就总结（梗模式） ----
+    if (MEME_MODE) {
+        var achievements = getAchievements();
+        if (achievements.length > 0) {
+            var achDiv = document.createElement('div');
+            achDiv.style.cssText = 'margin-top:14px;padding:14px 18px;background:rgba(255,255,255,0.03);border-radius:16px;border:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(180,210,220,0.7);line-height:1.9;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);';
+            achDiv.innerHTML = '<strong>🏅 一周目总结：</strong><br>' + achievements.join('<br>');
+            container.appendChild(achDiv);
+        }
+    }
+
+    // 更新场景文本
+    document.getElementById('story-text').textContent = '';
+
+    updateGallery();
+    saveGameSilent();
+    updateUI();
+    checkAchievements();
+}
+
+/** 获取成就总结 */
+function getAchievements() {
+    var list = [];
+    // 莽夫の海：5个以上激进选项
+    if (gameState._aggressiveCount >= 5) {
+        list.push('「莽夫の海」——你比鲨鱼还鲨鱼，海明威棺材板压不住了。');
+    }
+    // 苟王之王：5个以上休息/保守选项
+    if (gameState._restCount >= 5) {
+        list.push('「苟王之王」——别人在钓鱼，你在鱼缸里泡澡。');
+    }
+    // 玻璃大炮：全程体力≤2
+    if (gameState._lowStaminaCount >= 3) {
+        list.push('「玻璃大炮」——输出全靠吼，血量全靠抖。');
+    }
+    // 轮回·慈悲者：完成E12后立即重开
+    if (gameState._justDidE12 && gameState.endingsUnlocked.length > 0) {
+        list.push('「轮回·慈悲者」——上辈子杀生，这辈子放生，下辈子……继续钓。');
+    }
+    if (list.length === 0) {
+        list.push('「平平无奇的渔夫」——你走了一条中规中矩的路，海明威表示：还行。');
+    }
+    return list;
+}
+
+// ============================================================
+//  成就系统模块
+// ============================================================
+
+/** 创建 Toast DOM */
+function createToastElements() {
+    if (document.getElementById('achievement-toast')) return;
+    var div = document.createElement('div');
+    div.id = 'achievement-toast';
+    div.innerHTML = '<div style="display:-webkit-box;display:-moz-box;display:-ms-flexbox;display:-webkit-flex;display:flex;-webkit-box-align:center;-moz-box-align:center;-ms-flex-align:center;-webkit-align-items:center;align-items:center;gap:16px;">' +
+        '<span id="toast-icon" style="font-size:40px;">🏅</span>' +
+        '<div><div id="toast-title" style="font-size:16px;font-weight:bold;color:#f0d6a8;">成就解锁</div>' +
+        '<div id="toast-name" style="font-size:20px;font-weight:bold;color:#e8dcc8;margin:4px 0;">硬汉之魂</div>' +
+        '<div id="toast-grade" style="font-size:13px;color:#8aa9b3;">黄金</div></div></div>';
+    document.body.appendChild(div);
+}
+
+/** 显示成就 Toast */
+function showAchievementToast(name, grade) {
+    var toast = document.getElementById('achievement-toast');
+    if (!toast) { createToastElements(); toast = document.getElementById('achievement-toast'); }
+    var icon = document.getElementById('toast-icon');
+    var nameEl = document.getElementById('toast-name');
+    var gradeEl = document.getElementById('toast-grade');
+    var titleEl = document.getElementById('toast-title');
+
+    var gradeMap = { bronze:'青铜', silver:'白银', gold:'黄金', legend:'传说' };
+    var iconMap = { bronze:'🥉', silver:'🥈', gold:'🥇', legend:'👑' };
+
+    icon.textContent = iconMap[grade] || '🏅';
+    nameEl.textContent = name;
+    gradeEl.textContent = gradeMap[grade] || '';
+    titleEl.textContent = '🏆 成就解锁！';
+    toast.style.borderColor = grade === 'legend' ? '#ff6b6b' :
+                              grade === 'gold' ? '#ffd700' :
+                              grade === 'silver' ? '#c0c0c0' : '#b08d6b';
+
+    // 先重置为初始隐藏状态，再通过 rAF 触发过渡动画
+    toast.style.display = 'block';
+    toast.style.webkitTransform = 'translateX(120%)';
+    toast.style.transform = 'translateX(120%)';
+    toast.style.opacity = '0';
+    // 双 rAF 确保浏览器完成布局计算后再触发过渡
+    requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+            toast.style.webkitTransform = 'translateX(0)';
+            toast.style.transform = 'translateX(0)';
+            toast.style.opacity = '1';
+        });
+    });
+
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function () {
+        toast.style.opacity = '0';
+        toast.style.webkitTransform = 'translateX(120%)';
+        toast.style.transform = 'translateX(120%)';
+        setTimeout(function () { toast.style.display = 'none'; }, 500);
+    }, 4500);
+}
+
+/** 解锁成就 */
+function unlockAchievement(id) {
+    if (!gameState.achievements) gameState.achievements = [];
+    if (gameState.achievements.indexOf(id) !== -1) return;
+    var def = null;
+    for (var i = 0; i < ACHIEVEMENT_LIST.length; i++) {
+        if (ACHIEVEMENT_LIST[i].id === id) { def = ACHIEVEMENT_LIST[i]; break; }
+    }
+    if (!def) return;
+    gameState.achievements.push(id);
+    sfxAchievement();
+    showAchievementToast(def.name, def.grade);
+    saveGameSilent();
+    updateAchievementUI();
+    updateUI();
+}
+
+/** 检测所有成就条件 */
+function checkAchievements() {
+    if (!gameState) return;
+    var p = gameState.achievementProgress || {};
+    var s = gameState;
+    var unlocked = s.achievements || [];
+
+    // A01: 初试锋芒
+    if (s.endingsUnlocked.length >= 1 && unlocked.indexOf('A01') === -1) unlockAchievement('A01');
+    // A02: 远海行者
+    if ((p.totalPlaythroughs || 0) >= 3 && unlocked.indexOf('A02') === -1) unlockAchievement('A02');
+    // A03: 时空旅人
+    if ((p.totalSaves || 0) + (p.totalLoads || 0) >= 1 && unlocked.indexOf('A03') === -1) unlockAchievement('A03');
+    // A04: 坚韧不拔
+    if (s.willpower >= 8 && unlocked.indexOf('A04') === -1) unlockAchievement('A04');
+    // A05: 海之哲人
+    if (s.insight >= 5 && unlocked.indexOf('A05') === -1) unlockAchievement('A05');
+    // A06: 残血战神 —— 体力≤1且通关且当前结局非E3
+    var lastEnding = s.endingsUnlocked.length > 0 ? s.endingsUnlocked[s.endingsUnlocked.length - 1] : null;
+    if (s.stamina <= 1 && s.endingsUnlocked.length > 0 && lastEnding !== 'E3' && unlocked.indexOf('A06') === -1) {
+        unlockAchievement('A06');
+    }
+    // A07: S/L大师
+    if ((p.totalSaves || 0) + (p.totalLoads || 0) >= 10 && unlocked.indexOf('A07') === -1) unlockAchievement('A07');
+    // A08: 鲨鱼克星
+    if ((p.sharkFightCount || 0) >= 4 && unlocked.indexOf('A08') === -1) unlockAchievement('A08');
+    // A09: 和平主义者
+    if ((p.sharkFleeCount || 0) >= 4 && unlocked.indexOf('A09') === -1) unlockAchievement('A09');
+    // A10: 狮王传承
+    if (s.endingsUnlocked.indexOf('E6') !== -1 && unlocked.indexOf('A10') === -1) unlockAchievement('A10');
+    // A11: 慈悲之海
+    if (s.endingsUnlocked.indexOf('E12') !== -1 && unlocked.indexOf('A11') === -1) unlockAchievement('A11');
+    // A12: 硬汉之魂
+    if (s.endingsUnlocked.indexOf('E1') !== -1 && unlocked.indexOf('A12') === -1) unlockAchievement('A12');
+    // A13: 海的遗产
+    if (s.endingsUnlocked.indexOf('E9') !== -1 && unlocked.indexOf('A13') === -1) unlockAchievement('A13');
+    // A14: 孤高之王 —— 解锁E2且未接受hasBoy标记（用_e2NoBoy精确判定）
+    if (gameState.achievementProgress._e2NoBoy && unlocked.indexOf('A14') === -1) unlockAchievement('A14');
+    // A15: 全收集·海王
+    if (s.endingsUnlocked.length >= 12 && unlocked.indexOf('A15') === -1) unlockAchievement('A15');
+    // A16: 面面俱到
+    if (s.willpower >= 6 && s.stamina >= 3 && s.insight >= 4 && unlocked.indexOf('A16') === -1) unlockAchievement('A16');
+    // A17: 极限求生
+    if ((p.nodesSurvivedLowStamina || 0) >= 5 && s.endingsUnlocked.length > 0 && unlocked.indexOf('A17') === -1) {
+        unlockAchievement('A17');
+    }
+    // A18: 海明威的凝视
+    if ((p.rejectSurrenderCount || 0) >= 5 && s.endingsUnlocked.indexOf('E1') !== -1 && unlocked.indexOf('A18') === -1) {
+        unlockAchievement('A18');
+    }
+    updateAchievementUI();
+}
+
+/** 更新成就面板UI */
+function updateAchievementUI() {
+    var grid = document.getElementById('achievement-grid');
+    if (!grid) return;
+    var count = gameState.achievements ? gameState.achievements.length : 0;
+    var countEl = document.getElementById('ach-count');
+    if (countEl) countEl.textContent = count;
+
+    var isCompact = grid.classList.contains('compact');
+    var gradeNames = { bronze: '青铜', silver: '白银', gold: '黄金', legend: '传说' };
+    var gradeIcons = { bronze: '🥉', silver: '🥈', gold: '🥇', legend: '👑' };
+
+    grid.innerHTML = '';
+
+    for (var i = 0; i < ACHIEVEMENT_LIST.length; i++) {
+        var def = ACHIEVEMENT_LIST[i];
+        var unlocked = (gameState.achievements || []).indexOf(def.id) !== -1;
+
+        if (isCompact) {
+            // 紧凑模式：小图标
+            var badge = document.createElement('span');
+            badge.className = 'ach-badge ' + (unlocked ? 'unlocked ' + def.grade : 'locked');
+            badge.textContent = (unlocked ? (gradeIcons[def.grade] || '✅') + ' ' : '❓ ') + def.name;
+            badge.title = unlocked ? '✅ 已解锁：' + def.hint : '🔒 未解锁：' + def.desc;
+            grid.appendChild(badge);
+        } else {
+            // 列表模式：卡片
+            var card = document.createElement('div');
+            card.className = 'ach-card ' + (unlocked ? 'unlocked ' + def.grade : 'locked');
+
+            var icon = document.createElement('span');
+            icon.className = 'ach-card-icon';
+            icon.textContent = unlocked ? gradeIcons[def.grade] || '✅' : '🔒';
+
+            var body = document.createElement('div');
+            body.className = 'ach-card-body';
+
+            var nameEl = document.createElement('div');
+            nameEl.className = 'ach-card-name';
+            nameEl.textContent = def.name;
+
+            var gradeEl = document.createElement('span');
+            gradeEl.className = 'ach-card-grade ' + def.grade;
+            gradeEl.textContent = gradeNames[def.grade] || '';
+
+            var descEl = document.createElement('div');
+            descEl.className = 'ach-card-desc' + (unlocked ? ' unlocked' : '');
+            descEl.textContent = unlocked ? '💬 ' + def.hint : '📋 ' + def.desc;
+
+            body.appendChild(nameEl);
+            body.appendChild(gradeEl);
+            body.appendChild(descEl);
+            card.appendChild(icon);
+            card.appendChild(body);
+            grid.appendChild(card);
+        }
+    }
+}
+
+/** 切换成就视图（列表/紧凑） */
+function toggleAchievementView() {
+    var grid = document.getElementById('achievement-grid');
+    if (!grid) return;
+    var toggle = document.getElementById('ach-view-toggle');
+    if (grid.classList.contains('compact')) {
+        grid.classList.remove('compact');
+        if (toggle) toggle.textContent = '≡';
+    } else {
+        grid.classList.add('compact');
+        if (toggle) toggle.textContent = '☰';
+    }
+    updateAchievementUI();
+}
+
+/** 切换成就面板 */
+function toggleAchievement() {
+    var grid = document.getElementById('achievement-grid');
+    if (!grid) return;
+    var toggle = document.getElementById('ach-view-toggle');
+    if (grid.style.display === 'none' || grid.style.display === '') {
+        grid.style.display = 'flex';
+        if (toggle) toggle.style.display = 'inline';
+        updateAchievementUI();
+    } else {
+        grid.style.display = 'none';
+        if (toggle) toggle.style.display = 'none';
+    }
+}
+
+/** 初始化成就系统 */
+function initAchievementSystem() {
+    if (!gameState.achievements) gameState.achievements = [];
+    if (!gameState.achievementProgress) {
+        gameState.achievementProgress = {
+            totalPlaythroughs: 0, totalSaves: 0, totalLoads: 0,
+            sharkFightCount: 0, sharkFleeCount: 0,
+            nodesSurvivedLowStamina: 0, rejectSurrenderCount: 0
+        };
+    }
+    createToastElements();
+    updateAchievementUI();
+}
+
+/** 更新UI：状态条和进度 */
+function updateUI() {
+    var mw = gameData.meta.maxWill || 8;
+    var ms = gameData.meta.maxSta || 6;
+    var mi = gameData.meta.maxIns || 5;
+
+    document.getElementById('will-fill').style.width = (gameState.willpower / mw * 100) + '%';
+    document.getElementById('will-val').textContent = gameState.willpower;
+
+    document.getElementById('sta-fill').style.width = (gameState.stamina / ms * 100) + '%';
+    document.getElementById('sta-val').textContent = gameState.stamina;
+
+    document.getElementById('ins-fill').style.width = (gameState.insight / mi * 100) + '%';
+    document.getElementById('ins-val').textContent = gameState.insight;
+
+    document.getElementById('ending-progress').textContent = (function () {
+        var n = gameState.endingsUnlocked.length;
+        var title = '';
+        if (n >= 12) title = '全成就·海王';
+        else if (n >= 8) title = '远海传奇';
+        else if (n >= 4) title = '近海老手';
+        else if (n >= 1) title = '初出茅庐的渔夫';
+        else title = '尚未出海';
+        return '图鉴：' + n + ' / 12 | ' + title;
+    })();
+}
+
+/** 更新结局图鉴 */
+function updateGallery() {
+    var grid = document.getElementById('gallery-grid');
+    grid.innerHTML = '';
+
+    var endings = gameData.endings;
+    var keys = [];
+    for (var k in endings) {
+        if (endings.hasOwnProperty(k)) {
+            keys.push(k);
+        }
+    }
+
+    for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        var e = endings[k];
+        var span = document.createElement('span');
+        span.className = 'gallery-badge';
+
+        var unlocked = false;
+        for (var j = 0; j < gameState.endingsUnlocked.length; j++) {
+            if (gameState.endingsUnlocked[j] === k) { unlocked = true; break; }
+        }
+
+        if (unlocked) {
+            span.className += ' unlocked';
+            span.textContent = '🏆 已收集: ' + e.title;
+        } else {
+            span.textContent = '❓ 未探索分支';
+        }
+        grid.appendChild(span);
+    }
+}
+
+/** 切换图鉴显示 */
+function toggleGallery() {
+    var grid = document.getElementById('gallery-grid');
+    if (grid.style.display === 'none' || grid.style.display === '') {
+        grid.style.display = 'flex';
+        updateGallery();
+    } else {
+        grid.style.display = 'none';
+    }
+}
+
+// ---- 液态玻璃效果（WebGL） ----
+var _lgCanvas = null;
+var _lgGl = null;
+var _lgProgram = null;
+var _lgRunning = false;
+var _lgAnimId = null;
+var _lgStartTime = 0;
+var _lgMouse = { x: -99.0, y: -99.0 };
+var _lgMouseTarget = { x: -99.0, y: -99.0 };
+var _lgMouseActive = false;
+
+/** 记录鼠标位置（归一化到 0~1，Y 轴翻转以匹配着色器坐标系） */
+function _lgOnMouseMove(e) {
+    _lgMouseTarget.x = e.clientX / Math.max(1, window.innerWidth);
+    _lgMouseTarget.y = 1.0 - e.clientY / Math.max(1, window.innerHeight);
+    if (!_lgMouseActive) {
+        _lgMouse.x = _lgMouseTarget.x;
+        _lgMouse.y = _lgMouseTarget.y;
+        _lgMouseActive = true;
+    }
+}
+
+/** 初始化液态玻璃 WebGL */
+function initLiquidGlass() {
+    _lgCanvas = document.getElementById('liquid-glass-bg');
+    if (!_lgCanvas) return;
+    try {
+        _lgGl = _lgCanvas.getContext('webgl', { alpha: true, antialias: false }) ||
+                 _lgCanvas.getContext('experimental-webgl', { alpha: true, antialias: false });
+    } catch (e) { _lgGl = null; }
+    if (!_lgGl) return;
+
+    // 顶点着色器
+    var vsSource = [
+        'attribute vec2 aPosition;',
+        'void main() {',
+        '  gl_Position = vec4(aPosition, 0.0, 1.0);',
+        '}'
+    ].join('\n');
+
+    // 片段着色器 —— 液态玻璃效果
+    var fsSource = [
+        'precision highp float;',
+        'uniform vec2 uResolution;',
+        'uniform float uTime;',
+        'uniform vec2 uMouse;',
+        '',
+        '// 2D 噪声函数（基于正弦的有机流动）',
+        'float hash(vec2 p) {',
+        '  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);',
+        '}',
+        '',
+        'float noise(vec2 p) {',
+        '  vec2 i = floor(p);',
+        '  vec2 f = fract(p);',
+        '  f = f * f * (3.0 - 2.0 * f);',
+        '  return mix(',
+        '    mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),',
+        '    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x),',
+        '    f.y',
+        '  );',
+        '}',
+        '',
+        'float fbm(vec2 p) {',
+        '  float v = 0.0;',
+        '  float a = 0.5;',
+        '  vec2 shift = vec2(100.0);',
+        '  for (int i = 0; i < 5; i++) {',
+        '    v += a * noise(p);',
+        '    p = p * 2.0 + shift;',
+        '    a *= 0.5;',
+        '  }',
+        '  return v;',
+        '}',
+        '',
+        'void main() {',
+        '  vec2 uv = gl_FragCoord.xy / uResolution.xy;',
+        '  vec2 p = uv * 3.0;',
+        '  float t = uTime * 0.15;',
+        '',
+        '  // 多层流动噪声',
+        '  float n1 = fbm(p + vec2(t * 0.3, t * 0.2));',
+        '  float n2 = fbm(p + vec2(-t * 0.25, t * 0.35) + 1.5);',
+        '  float n3 = fbm(p * 0.7 + vec2(t * 0.15, -t * 0.2) + 3.0);',
+        '',
+        '  // 组合噪声产生液态流动感',
+        '  float flow = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;',
+        '',
+        '  // 色彩：深蓝到青绿到紫的渐变',
+        '  vec3 color1 = vec3(0.08, 0.18, 0.32);  // 深海蓝',
+        '  vec3 color2 = vec3(0.10, 0.28, 0.38);  // 青蓝',
+        '  vec3 color3 = vec3(0.15, 0.12, 0.30);  // 暗紫',
+        '  vec3 color4 = vec3(0.12, 0.22, 0.28);  // 深蓝绿',
+        '',
+        '  float mix1 = smoothstep(0.2, 0.6, n1);',
+        '  float mix2 = smoothstep(0.3, 0.7, n2);',
+        '  float mix3 = smoothstep(0.1, 0.5, n3);',
+        '',
+        '  vec3 col = mix(color1, color2, mix1);',
+        '  col = mix(col, color3, mix2 * 0.4);',
+        '  col = mix(col, color4, mix3 * 0.3);',
+        '',
+        '  // 彩虹色高光（液态玻璃的虹彩折射）',
+        '  float highlight = smoothstep(0.55, 0.75, flow);',
+        '  vec3 iridescence = vec3(',
+        '    0.7 + 0.3 * sin(flow * 20.0 + t),',
+        '    0.5 + 0.3 * sin(flow * 20.0 + t + 2.0),',
+        '    0.6 + 0.3 * sin(flow * 20.0 + t + 4.0)',
+        '  );',
+        '  col = mix(col, iridescence * 0.25, highlight * 0.45);',
+        '',
+        '  // 边缘暗角',
+        '  float vignette = 1.0 - length(uv - 0.5) * 0.7;',
+        '  col *= vignette;',
+        '',
+        '  // 细微波纹',
+        '  float ripple = sin(uv.x * 25.0 + t) * cos(uv.y * 20.0 + t * 0.7) * 0.03;',
+        '  col += ripple;',
+        '',
+        '  // 鼠标跟随高亮（白→蓝渐变光斑）',
+        '  vec2 m = uMouse;',
+        '  float md = distance(uv, m);',
+        '  float glow = exp(-md * md * 45.0);',
+        '  vec3 white = vec3(1.0, 1.0, 1.0);',
+        '  vec3 blue = vec3(0.30, 0.55, 0.95);',
+        '  float grad = smoothstep(0.0, 0.24, md);',
+        '  vec3 mouseCol = mix(white, blue, grad);',
+        '  col += mouseCol * glow * 0.6;',
+        '',
+        '  // 外圈蓝色柔光晕',
+        '  float halo = exp(-md * md * 12.0) * (1.0 - glow);',
+        '  col += blue * halo * 0.35;',
+        '',
+        '  gl_FragColor = vec4(col, 0.85);',
+        '}'
+    ].join('\n');
+
+    // 编译着色器
+    function compileShader(gl, type, source) {
+        var shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            gl.deleteShader(shader);
+            return null;
+        }
+        return shader;
+    }
+
+    var vs = compileShader(_lgGl, _lgGl.VERTEX_SHADER, vsSource);
+    var fs = compileShader(_lgGl, _lgGl.FRAGMENT_SHADER, fsSource);
+    if (!vs || !fs) { _lgGl = null; return; }
+
+    _lgProgram = _lgGl.createProgram();
+    _lgGl.attachShader(_lgProgram, vs);
+    _lgGl.attachShader(_lgProgram, fs);
+    _lgGl.linkProgram(_lgProgram);
+    if (!_lgGl.getProgramParameter(_lgProgram, _lgGl.LINK_STATUS)) {
+        _lgGl = null;
+        return;
+    }
+
+    // 设置全屏四边形
+    var vertices = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+    var buf = _lgGl.createBuffer();
+    _lgGl.bindBuffer(_lgGl.ARRAY_BUFFER, buf);
+    _lgGl.bufferData(_lgGl.ARRAY_BUFFER, vertices, _lgGl.STATIC_DRAW);
+    var aPos = _lgGl.getAttribLocation(_lgProgram, 'aPosition');
+    _lgGl.enableVertexAttribArray(aPos);
+    _lgGl.vertexAttribPointer(aPos, 2, _lgGl.FLOAT, false, 0, 0);
+}
+
+/** 启动液态玻璃渲染循环 */
+function startLiquidGlass() {
+    if (!_lgGl || !_lgProgram) {
+        initLiquidGlass();
+        if (!_lgGl || !_lgProgram) return;
+    }
+    _lgCanvas.classList.add('active');
+    _lgRunning = true;
+    _lgStartTime = performance.now();
+    resizeLiquidGlass();
+    window.addEventListener('mousemove', _lgOnMouseMove, false);
+    _lgAnimId = requestAnimationFrame(renderLiquidGlass);
+}
+
+/** 停止液态玻璃渲染 */
+function stopLiquidGlass() {
+    _lgRunning = false;
+    window.removeEventListener('mousemove', _lgOnMouseMove, false);
+    if (_lgAnimId) {
+        cancelAnimationFrame(_lgAnimId);
+        _lgAnimId = null;
+    }
+    if (_lgCanvas) {
+        _lgCanvas.classList.remove('active');
+    }
+}
+
+/** 调整画布尺寸 */
+function resizeLiquidGlass() {
+    if (!_lgCanvas) return;
+    var dpr = window.devicePixelRatio || 1;
+    var w = window.innerWidth * dpr;
+    var h = window.innerHeight * dpr;
+    if (_lgCanvas.width !== w || _lgCanvas.height !== h) {
+        _lgCanvas.width = w;
+        _lgCanvas.height = h;
+        _lgCanvas.style.width = window.innerWidth + 'px';
+        _lgCanvas.style.height = window.innerHeight + 'px';
+    }
+    if (_lgGl) _lgGl.viewport(0, 0, _lgCanvas.width, _lgCanvas.height);
+}
+
+/** 渲染一帧 */
+function renderLiquidGlass(ts) {
+    if (!_lgRunning) return;
+    _lgAnimId = requestAnimationFrame(renderLiquidGlass);
+    resizeLiquidGlass();
+    _lgGl.useProgram(_lgProgram);
+    if (_lgMouseActive) {
+        _lgMouse.x += (_lgMouseTarget.x - _lgMouse.x) * 0.10;
+        _lgMouse.y += (_lgMouseTarget.y - _lgMouse.y) * 0.10;
+    }
+    _lgGl.uniform2f(_lgGl.getUniformLocation(_lgProgram, 'uResolution'), _lgCanvas.width, _lgCanvas.height);
+    _lgGl.uniform1f(_lgGl.getUniformLocation(_lgProgram, 'uTime'), (ts - _lgStartTime) * 0.001);
+    _lgGl.uniform2f(_lgGl.getUniformLocation(_lgProgram, 'uMouse'), _lgMouse.x, _lgMouse.y);
+    _lgGl.drawArrays(_lgGl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ---- 音效系统（Web Audio API 合成） ----
+var _audioCtx = null;
+var _audioEnabled = true;
+
+/** 初始化音频上下文（需用户手势触发） */
+function initAudio() {
+    if (_audioCtx) return;
+    try {
+        var AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        _audioCtx = new AudioContext();
+    } catch (e) { /* 浏览器不支持 */ }
+}
+
+/** 检查音效是否可用 */
+function soundAvailable() {
+    return _audioCtx && _audioCtx.state !== 'closed' && gameSettings.soundEnabled;
+}
+
+/** 播放一个简单音调 */
+function playTone(freq, duration, type, vol, rampDown) {
+    if (!soundAvailable()) return;
+    try {
+        if (_audioCtx.state === 'suspended') _audioCtx.resume();
+        var osc = _audioCtx.createOscillator();
+        var gain = _audioCtx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(vol || 0.15, _audioCtx.currentTime);
+        if (rampDown !== false) {
+            gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + (duration || 0.3));
+        }
+        osc.connect(gain);
+        gain.connect(_audioCtx.destination);
+        osc.start(_audioCtx.currentTime);
+        osc.stop(_audioCtx.currentTime + (duration || 0.3));
+    } catch (e) { /* 静默 */ }
+}
+
+/** 播放双音符（和弦/间隔） */
+function playDualTone(f1, f2, duration, type, vol, delay) {
+    if (!soundAvailable()) return;
+    playTone(f1, duration, type, vol);
+    setTimeout(function () { playTone(f2, duration, type, vol); }, delay || 80);
+}
+
+/** 播放三音符序列 */
+function playTripleTone(f1, f2, f3, duration, type, vol, gap) {
+    if (!soundAvailable()) return;
+    playTone(f1, duration, type, vol);
+    setTimeout(function () { playTone(f2, duration, type, vol); }, (gap || 100));
+    setTimeout(function () { playTone(f3, duration, type, vol); }, (gap || 100) * 2);
+}
+
+/** 播放噪声（白噪声/冲击） */
+function playNoise(duration, vol, filterFreq) {
+    if (!soundAvailable()) return;
+    try {
+        if (_audioCtx.state === 'suspended') _audioCtx.resume();
+        var bufferSize = _audioCtx.sampleRate * (duration || 0.2);
+        var buffer = _audioCtx.createBuffer(1, bufferSize, _audioCtx.sampleRate);
+        var data = buffer.getChannelData(0);
+        for (var i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        var source = _audioCtx.createBufferSource();
+        source.buffer = buffer;
+        var gain = _audioCtx.createGain();
+        gain.gain.setValueAtTime(vol || 0.1, _audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + (duration || 0.2));
+        if (filterFreq) {
+            var filter = _audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = filterFreq;
+            source.connect(filter);
+            filter.connect(gain);
+        } else {
+            source.connect(gain);
+        }
+        gain.connect(_audioCtx.destination);
+        source.start(_audioCtx.currentTime);
+    } catch (e) { /* 静默 */ }
+}
+
+// ---- 具体音效 ----
+
+/** UI 点击音效 */
+function sfxClick() {
+    playTone(800, 0.08, 'sine', 0.1);
+}
+
+/** 选择选项音效 */
+function sfxChoice() {
+    playDualTone(440, 660, 0.12, 'triangle', 0.12);
+}
+
+/** 场景过渡音效（海浪感） */
+function sfxTransition() {
+    playNoise(0.4, 0.06, 800);
+    setTimeout(function () { playTone(220, 0.5, 'sine', 0.08, false); }, 100);
+}
+
+/** 结局音效 */
+function sfxEnding(good) {
+    if (good) {
+        // 胜利号角
+        playTripleTone(523, 659, 784, 0.25, 'triangle', 0.15, 120);
+    } else {
+        // 低沉哀叹
+        playTone(165, 0.8, 'sine', 0.12);
+        setTimeout(function () { playTone(130, 0.6, 'sine', 0.1); }, 300);
+    }
+}
+
+/** 成就解锁音效（上扬叮咚） */
+function sfxAchievement() {
+    playTripleTone(587, 784, 988, 0.2, 'triangle', 0.15, 100);
+    setTimeout(function () { playTone(1175, 0.35, 'triangle', 0.18); }, 350);
+}
+
+/** 存档音效 */
+function sfxSave() {
+    playDualTone(660, 880, 0.15, 'sine', 0.1, 60);
+}
+
+/** 读档音效 */
+function sfxLoad() {
+    playDualTone(880, 660, 0.15, 'sine', 0.1, 60);
+}
+
+/** 危险警告音效（低体力） */
+function sfxDanger() {
+    playTone(200, 0.15, 'square', 0.12);
+    setTimeout(function () { playTone(150, 0.2, 'square', 0.12); }, 200);
+}
+
+/** 鲨鱼遭遇音效 */
+function sfxShark() {
+    playNoise(0.3, 0.15, 300);
+    setTimeout(function () { playTone(80, 0.4, 'sawtooth', 0.1, false); }, 150);
+}
+
+/** 死亡音效 */
+function sfxDeath() {
+    playTone(330, 0.3, 'triangle', 0.15);
+    setTimeout(function () { playTone(220, 0.4, 'triangle', 0.12); }, 200);
+    setTimeout(function () { playTone(110, 0.6, 'sine', 0.1); }, 500);
+}
+
+/** 重新开始音效 */
+function sfxRestart() {
+    playTone(440, 0.15, 'sine', 0.1);
+    setTimeout(function () { playTone(660, 0.2, 'sine', 0.12); }, 120);
+}
+
+// ---- 文件系统存档（File System Access API） ----
+var _saveFileHandle = null;   // 文件句柄（内存缓存）
+var FS_HANDLE_KEY = 'oldman_sea_fs_handle_v1';
+
+/** 从 IndexedDB 恢复文件句柄 */
+function restoreFileHandle() {
+    return new Promise(function (resolve) {
+        if (!window.indexedDB) { resolve(null); return; }
+        try {
+            var req = indexedDB.open('OldManSeaFS', 1);
+            req.onupgradeneeded = function (e) {
+                e.target.result.createObjectStore('handles');
+            };
+            req.onsuccess = function (e) {
+                var db = e.target.result;
+                var tx, store, getReq;
+                try {
+                    tx = db.transaction('handles', 'readonly');
+                    store = tx.objectStore('handles');
+                    getReq = store.get(FS_HANDLE_KEY);
+                } catch (err) { db.close(); resolve(null); return; }
+                getReq.onsuccess = function () { db.close(); resolve(getReq.result || null); };
+                getReq.onerror = function () { db.close(); resolve(null); };
+            };
+            req.onerror = function () { resolve(null); };
+        } catch (e) { resolve(null); }
+    });
+}
+
+/** 持久化文件句柄到 IndexedDB */
+function storeFileHandle(handle) {
+    if (!window.indexedDB || !handle) return;
+    try {
+        var req = indexedDB.open('OldManSeaFS', 1);
+        req.onupgradeneeded = function (e) {
+            e.target.result.createObjectStore('handles');
+        };
+        req.onsuccess = function (e) {
+            var db = e.target.result;
+            var tx, store;
+            try {
+                tx = db.transaction('handles', 'readwrite');
+                store = tx.objectStore('handles');
+                store.put(handle, FS_HANDLE_KEY);
+            } catch (err) { db.close(); return; }
+            tx.oncomplete = function () { db.close(); };
+            tx.onerror = function () { db.close(); };
+        };
+    } catch (e) { /* 静默 */ }
+}
+
+/** 写入 save.json 文件 */
+async function writeSaveFile() {
+    if (!_saveFileHandle) return;
+    try {
+        var writable = await _saveFileHandle.createWritable();
+        var data = JSON.stringify({ state: gameState }, null, 2);
+        await writable.write(data);
+        await writable.close();
+    } catch (e) {
+        // 文件句柄失效，清除
+        _saveFileHandle = null;
+        storeFileHandle(null);
+    }
+}
+
+/** 从 save.json 文件读取存档 */
+async function readSaveFile() {
+    if (!_saveFileHandle) return null;
+    try {
+        var file = await _saveFileHandle.getFile();
+        var text = await file.text();
+        return JSON.parse(text);
+    } catch (e) {
+        return null;
+    }
+}
+
+/** 初始化文件存储（需要用户手势） */
+async function initFileSave() {
+    if (_saveFileHandle) return true; // 已有句柄
+    // 尝试从 IndexedDB 恢复
+    _saveFileHandle = await restoreFileHandle();
+    if (_saveFileHandle) {
+        // 验证权限
+        try {
+            var opts = { mode: 'readwrite' };
+            var ok = await _saveFileHandle.queryPermission(opts);
+            if (ok !== 'granted') {
+                ok = await _saveFileHandle.requestPermission(opts);
+            }
+            if (ok === 'granted') return true;
+        } catch (e) { /* 权限检查失败，重新选择 */ }
+        _saveFileHandle = null;
+    }
+    // 需要用户选择文件位置
+    if (!window.showSaveFilePicker) return false;
+    try {
+        _saveFileHandle = await window.showSaveFilePicker({
+            suggestedName: 'save.json',
+            types: [{ description: 'JSON 存档', accept: { 'application/json': ['.json'] } }]
+        });
+        storeFileHandle(_saveFileHandle);
+        return true;
+    } catch (e) {
+        // 用户取消
+        return false;
+    }
+}
+
+/** 静默存档（同时更新自动存档槽位） */
+function saveGameSilent() {
+    try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify({ state: gameState }));
+    } catch (e) { /* 静默失败 */ }
+    // 同时写入文件
+    writeSaveFile();
+    // 更新自动存档槽位 (slot 0) - 仅在自动存档开启时
+    if (gameSettings.autoSave) {
+        try {
+            var slots = getSaveSlots();
+            while (slots.length < MAX_SLOTS) { slots.push(null); }
+            slots[0] = buildSaveData();
+            setSaveSlots(slots);
+        } catch (e) { /* 静默 */ }
+    }
+}
+
+/** 手动存档（同时更新快速存档槽位和自动存档槽位） */
+function saveGame() {
+    gameState.achievementProgress.totalSaves = (gameState.achievementProgress.totalSaves || 0) + 1;
+    sfxSave();
+    saveGameSilent();
+    // 更新快速存档槽位 (slot 1)
+    var slots = getSaveSlots();
+    while (slots.length < MAX_SLOTS) { slots.push(null); }
+    slots[1] = buildSaveData();
+    // 同时更新自动存档槽位 (slot 0)
+    slots[0] = buildSaveData();
+    setSaveSlots(slots);
+    // 短暂视觉反馈
+    var indicator = document.getElementById('save-indicator');
+    if (indicator) {
+        var orig = indicator.textContent;
+        indicator.textContent = '✅ 已保存';
+        indicator.style.color = '#7ec8a0';
+        setTimeout(function () {
+            indicator.textContent = orig;
+            indicator.style.color = '';
+        }, 1500);
+    }
+    checkAchievements();
+}
+
+/** 读档（打开设置面板的存档管理标签页） */
+function loadGame() {
+    openSettings('saves');
+}
+
+/** 从 JSON 字符串恢复状态 */
+function restoreStateFromSave(raw) {
+    var save = JSON.parse(raw);
+    if (save && save.state) {
+        cancelPendingTransition();
+        gameState = save.state;
+        // 兼容旧存档
+        if (typeof gameState.insight === 'undefined') gameState.insight = 0;
+        if (!gameState.flags) gameState.flags = [];
+        if (!gameState.history) gameState.history = [];
+        if (!gameState.endingsUnlocked) gameState.endingsUnlocked = [];
+        if (!gameState.achievements) gameState.achievements = [];
+        if (!gameState.achievementProgress) {
+            gameState.achievementProgress = {
+                totalPlaythroughs: 0, totalSaves: 0, totalLoads: 0,
+                sharkFightCount: 0, sharkFleeCount: 0,
+                nodesSurvivedLowStamina: 0, rejectSurrenderCount: 0
+            };
+        }
+        gameState._pendingTransition = null;
+        renderNode(gameState.currentNode);
+        updateUI();
+        updateGallery();
+    } else {
+        alert('📭 存档数据无效');
+    }
+}
+
+/** 重新开始 */
+function restartGame() {
+    cancelPendingTransition();
+    sfxRestart();
+
+    // 大鱼怨念：E12后用旧状态
+    var wasE12 = gameState._justDidE12;
+
+    gameState.willpower = 1;
+    gameState.stamina = 4;
+    gameState.insight = 0;
+    gameState.flags = [];
+    gameState.currentNode = 'N1';
+    gameState.history = [];
+    gameState._pendingTransition = null;
+    gameState._abandonCount = 0;
+    gameState._lonerConsecutive = 0;
+    gameState._aggressiveCount = 0;
+    gameState._restCount = 0;
+    gameState._lowStaminaCount = 0;
+    gameState._memeN2BChosen = false;
+    // 保留 _justDidE12 用于成就判定
+    // 保留 endingsUnlocked 和 playCount
+
+    // 多周目加成
+    if (gameState.playCount > 0) {
+        gameState.willpower += 1;
+        if (gameState.willpower > gameData.meta.maxWill) {
+            gameState.willpower = gameData.meta.maxWill;
+        }
+    }
+    // E6隐藏成就加成
+    if (MEME_MODE) {
+        var hasE6 = false;
+        for (var ei = 0; ei < gameState.endingsUnlocked.length; ei++) {
+            if (gameState.endingsUnlocked[ei] === 'E6') { hasE6 = true; break; }
+        }
+        if (hasE6) {
+            gameState.willpower += 2;
+            if (gameState.willpower > gameData.meta.maxWill) {
+                gameState.willpower = gameData.meta.maxWill;
+            }
+        }
+    }
+
+    renderNode('N1');
+    updateUI();
+    updateGallery();
+
+    // 大鱼怨念：E12后重开时触发
+    if (MEME_MODE && wasE12) {
+        setTimeout(function () {
+            alert('那条被你放走的大鱼在海底给其他鱼发了群消息：\n\n「这个老头还行，给他个面子。」');
+        }, 500);
+    }
+    gameState._justDidE12 = false; // 重置
+
+    saveGameSilent();
+}
+
+// =============================================================
+//  新版存档系统 —— 设置面板、多槽位存档、导入导出
+// =============================================================
+
+/** 初始化设置 */
+function initSettings() {
+    try {
+        var raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) {
+            var saved = JSON.parse(raw);
+            if (saved) {
+                if (typeof saved.memeMode === 'boolean') gameSettings.memeMode = saved.memeMode;
+                if (typeof saved.autoSave === 'boolean') gameSettings.autoSave = saved.autoSave;
+                if (typeof saved.soundEnabled === 'boolean') gameSettings.soundEnabled = saved.soundEnabled;
+                if (typeof saved.liquidGlassEnabled === 'boolean') gameSettings.liquidGlassEnabled = saved.liquidGlassEnabled;
+                if (typeof saved.textSpeed === 'number') gameSettings.textSpeed = saved.textSpeed;
+            }
+        }
+    } catch (e) { /* 静默 */ }
+    // 同步 MEME_MODE
+    MEME_MODE = gameSettings.memeMode;
+}
+
+/** 保存设置到 localStorage */
+function saveSettings() {
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(gameSettings));
+    } catch (e) { /* 静默 */ }
+    MEME_MODE = gameSettings.memeMode;
+}
+
+/** 打开设置面板 */
+function openSettings(tab) {
+    var overlay = document.getElementById('settings-overlay');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    var targetTab = tab || 'saves';
+    switchSettingsTab(targetTab);
+}
+
+/** 关闭设置面板 */
+function closeSettings() {
+    var overlay = document.getElementById('settings-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+/** 切换设置标签页 */
+function switchSettingsTab(tabName) {
+    var tabs = document.querySelectorAll('.settings-tab');
+    for (var i = 0; i < tabs.length; i++) {
+        if (tabs[i].getAttribute('data-tab') === tabName) {
+            tabs[i].classList.add('active');
+        } else {
+            tabs[i].classList.remove('active');
+        }
+    }
+    var contents = document.querySelectorAll('.settings-tab-content');
+    for (var j = 0; j < contents.length; j++) {
+        contents[j].classList.remove('active');
+    }
+    var content = document.getElementById('tab-' + tabName);
+    if (content) content.classList.add('active');
+
+    // 渲染对应内容
+    if (tabName === 'saves') renderSaveSlots();
+    else if (tabName === 'game') renderSettingsTab();
+    else if (tabName === 'history') renderHistory();
+    else if (tabName === 'about') renderAboutTab();
+}
+
+/** 获取所有存档槽位数据 */
+function getSaveSlots() {
+    try {
+        var raw = localStorage.getItem(SAVE_SLOTS_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch (e) { /* 静默 */ }
+    return [];
+}
+
+/** 保存所有槽位到 localStorage */
+function setSaveSlots(slots) {
+    try {
+        localStorage.setItem(SAVE_SLOTS_KEY, JSON.stringify(slots));
+    } catch (e) { /* 静默 */ }
+}
+
+/** 构建完整存档对象 */
+function buildSaveData() {
+    return {
+        version: GAME_VERSION,
+        gameVersion: GAME_VERSION,
+        timestamp: Date.now(),
+        gameState: {
+            willpower: gameState.willpower,
+            stamina: gameState.stamina,
+            insight: gameState.insight,
+            flags: gameState.flags ? gameState.flags.slice() : [],
+            currentNode: gameState.currentNode,
+            history: gameState.history ? gameState.history.slice() : [],
+            endingsUnlocked: gameState.endingsUnlocked ? gameState.endingsUnlocked.slice() : [],
+            achievements: gameState.achievements ? gameState.achievements.slice() : [],
+            achievementProgress: gameState.achievementProgress ? JSON.parse(JSON.stringify(gameState.achievementProgress)) : {},
+            playCount: gameState.playCount || 0,
+            _pendingTransition: null,
+            _abandonCount: gameState._abandonCount || 0,
+            _lonerConsecutive: gameState._lonerConsecutive || 0,
+            _aggressiveCount: gameState._aggressiveCount || 0,
+            _restCount: gameState._restCount || 0,
+            _lowStaminaCount: gameState._lowStaminaCount || 0,
+            _justDidE12: gameState._justDidE12 || false,
+            _memeN2BChosen: gameState._memeN2BChosen || false
+        },
+        settings: {
+            memeMode: gameSettings.memeMode,
+            autoSave: gameSettings.autoSave,
+            soundEnabled: gameSettings.soundEnabled,
+            liquidGlassEnabled: gameSettings.liquidGlassEnabled,
+            textSpeed: gameSettings.textSpeed
+        },
+        metadata: {
+            playerName: '圣地亚哥',
+            totalPlayTime: 0,
+            lastPlayDate: new Date().toISOString()
+        }
+    };
+}
+
+/** 渲染所有存档槽位 */
+function renderSaveSlots() {
+    var container = document.getElementById('tab-saves');
+    if (!container) return;
+    var slots = getSaveSlots();
+    var html = '';
+
+    // 版本信息
+    html += '<div class="save-version-info">当前游戏版本: v' + GAME_VERSION + '</div>';
+
+    // 各槽位
+    for (var i = 0; i < MAX_SLOTS; i++) {
+        var data = (slots && slots[i]) ? slots[i] : null;
+        html += createSaveSlotHtml(i, data);
+    }
+
+    // 导入导出按钮
+    html += '<div class="save-import-export">';
+    html += '<button class="slot-btn primary" onclick="importSave()">📥 导入存档</button>';
+    html += '<button class="slot-btn" onclick="exportAllSlots()">📤 导出所有存档</button>';
+    html += '</div>';
+
+    // 自动存档开关
+    html += '<div class="setting-row" style="margin-top:12px;">';
+    html += '<div><label>自动存档</label><div class="setting-desc">每次选择后自动保存到自动存档槽位</div></div>';
+    html += '<label class="toggle-switch"><input type="checkbox" id="auto-save-toggle" ' + (gameSettings.autoSave ? 'checked' : '') + ' onchange="gameSettings.autoSave=this.checked;saveSettings();"><span class="toggle-slider"></span></label>';
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    // 为每个槽位绑定展开/折叠事件
+    for (var si = 0; si < MAX_SLOTS; si++) {
+        var detailEl = document.getElementById('slot-detail-' + si);
+        if (detailEl) {
+            (function (idx) {
+                var toggleBtn = document.getElementById('slot-toggle-' + idx);
+                if (toggleBtn) {
+                    toggleBtn.onclick = function () { toggleSlotDetail(idx); };
+                }
+            })(si);
+        }
+    }
+}
+
+/** 创建单个存档槽位HTML */
+function createSaveSlotHtml(slotIndex, data) {
+    var html = '<div class="save-slot">';
+    var hasData = data && data.gameState;
+
+    // 头部
+    html += '<div class="save-slot-header">';
+    html += '<span class="save-slot-name"><span class="slot-marker' + (hasData ? '' : ' empty') + '"></span>' + SLOT_NAMES[slotIndex] + '</span>';
+    if (hasData && data.timestamp) {
+        var d = new Date(data.timestamp);
+        html += '<span class="save-slot-time">' + d.toLocaleString() + '</span>';
+    }
+    html += '</div>';
+
+    if (hasData) {
+        var gs = data.gameState;
+        html += '<div class="save-slot-stats">';
+        html += '🧠 精神 ' + (gs.willpower || 0) + '　💪 体力 ' + (gs.stamina || 0) + '　🌊 感悟 ' + (gs.insight || 0);
+        if (gs.endingsUnlocked && gs.endingsUnlocked.length > 0) {
+            html += '　🏆 ' + gs.endingsUnlocked.join('/');
+        }
+        html += '</div>';
+
+        // 版本标记
+        if (data.version && data.version !== GAME_VERSION) {
+            html += '<div style="font-size:11px;color:#ff8c00;margin-bottom:4px;">⚠ 存档版本: v' + (data.version || '?') + ' (当前: v' + GAME_VERSION + ')</div>';
+        }
+
+        html += '<div class="save-slot-actions">';
+        html += '<button class="slot-btn primary" onclick="loadFromSlot(' + slotIndex + ')">📖 读取</button>';
+        html += '<button class="slot-btn" onclick="saveToSlot(' + slotIndex + ')">💾 覆盖</button>';
+        html += '<button class="slot-btn" onclick="exportSlot(' + slotIndex + ')">📤 导出</button>';
+        if (slotIndex >= 2) {
+            html += '<button class="slot-btn danger" onclick="deleteSlot(' + slotIndex + ')">🗑 删除</button>';
+        }
+        html += '<button class="slot-btn" id="slot-toggle-' + slotIndex + '">📜 查看路径</button>';
+        html += '</div>';
+
+        // 展开详情
+        html += '<div class="save-slot-detail" id="slot-detail-' + slotIndex + '">';
+        var history = gs.history || [];
+        html += '<div class="path-label">路径（共' + history.length + '个节点）：</div>';
+        var items = [];
+        for (var h = 0; h < history.length; h++) {
+            var id = history[h];
+            var name = getNodeDisplayName(id);
+            var icon = (id.indexOf('E') === 0) ? '🏆' : '📖';
+            items.push(icon + ' ' + name);
+        }
+        html += '<div style="font-size:13px;line-height:1.6;">' + items.join(' → ') + '</div>';
+        var last = history[history.length - 1];
+        if (last && last.indexOf('E') === 0 && gs.endingsUnlocked) {
+            html += '<div class="final-ending">最终结局：' + getNodeDisplayName(last) + '</div>';
+        }
+        html += '</div>';
+    } else {
+        html += '<div class="save-slot-empty">（空）</div>';
+        html += '<div class="save-slot-actions">';
+        html += '<button class="slot-btn primary" onclick="saveToSlot(' + slotIndex + ')">💾 新建存档</button>';
+        html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+}
+
+/** 展开/折叠存档槽位详情 */
+function toggleSlotDetail(slotIndex) {
+    var detail = document.getElementById('slot-detail-' + slotIndex);
+    if (!detail) return;
+    if (detail.classList.contains('open')) {
+        detail.classList.remove('open');
+    } else {
+        detail.classList.add('open');
+    }
+}
+
+/** 保存当前游戏到指定槽位 */
+function saveToSlot(slotIndex) {
+    var slots = getSaveSlots();
+    while (slots.length < MAX_SLOTS) { slots.push(null); }
+    var data = buildSaveData();
+    slots[slotIndex] = data;
+    setSaveSlots(slots);
+    gameState.achievementProgress.totalSaves = (gameState.achievementProgress.totalSaves || 0) + 1;
+    renderSaveSlots();
+    updateSaveIndicator('✅ 已保存到 ' + SLOT_NAMES[slotIndex]);
+}
+
+/** 从指定槽位读档 */
+function loadFromSlot(slotIndex) {
+    var slots = getSaveSlots();
+    if (!slots[slotIndex] || !slots[slotIndex].gameState) {
+        alert('📭 该槽位无存档数据');
+        return;
+    }
+    var data = slots[slotIndex];
+    // 升级旧存档
+    data = upgradeSave(data);
+    if (!confirm('确定要从「' + SLOT_NAMES[slotIndex] + '」读取存档吗？当前进度将丢失。')) return;
+    restoreStateFromSlotData(data);
+    sfxLoad();
+    gameState.achievementProgress.totalLoads = (gameState.achievementProgress.totalLoads || 0) + 1;
+    closeSettings();
+    updateSaveIndicator('✅ 已从 ' + SLOT_NAMES[slotIndex] + ' 读档');
+    checkAchievements();
+}
+
+/** 从槽位数据恢复状态 */
+function restoreStateFromSlotData(data) {
+    if (!data || !data.gameState) return;
+    cancelPendingTransition();
+    var gs = data.gameState;
+    gameState.willpower = gs.willpower || 1;
+    gameState.stamina = gs.stamina || 4;
+    gameState.insight = gs.insight || 0;
+    gameState.flags = gs.flags || [];
+    gameState.currentNode = gs.currentNode || 'N1';
+    gameState.history = gs.history || [];
+    gameState.endingsUnlocked = gs.endingsUnlocked || [];
+    gameState.achievements = gs.achievements || [];
+    gameState.achievementProgress = gs.achievementProgress || {
+        totalPlaythroughs: 0, totalSaves: 0, totalLoads: 0,
+        sharkFightCount: 0, sharkFleeCount: 0,
+        nodesSurvivedLowStamina: 0, rejectSurrenderCount: 0
+    };
+    gameState.playCount = gs.playCount || 0;
+    gameState._pendingTransition = null;
+    gameState._abandonCount = gs._abandonCount || 0;
+    gameState._lonerConsecutive = gs._lonerConsecutive || 0;
+    gameState._aggressiveCount = gs._aggressiveCount || 0;
+    gameState._restCount = gs._restCount || 0;
+    gameState._lowStaminaCount = gs._lowStaminaCount || 0;
+    gameState._justDidE12 = gs._justDidE12 || false;
+    gameState._memeN2BChosen = gs._memeN2BChosen || false;
+
+    // 恢复设置
+    if (data.settings) {
+        if (typeof data.settings.memeMode === 'boolean') gameSettings.memeMode = data.settings.memeMode;
+        if (typeof data.settings.autoSave === 'boolean') gameSettings.autoSave = data.settings.autoSave;
+        if (typeof data.settings.soundEnabled === 'boolean') gameSettings.soundEnabled = data.settings.soundEnabled;
+        if (typeof data.settings.liquidGlassEnabled === 'boolean') gameSettings.liquidGlassEnabled = data.settings.liquidGlassEnabled;
+        if (typeof data.settings.textSpeed === 'number') gameSettings.textSpeed = data.settings.textSpeed;
+        saveSettings();
+    }
+
+    renderNode(gameState.currentNode);
+    updateUI();
+    updateGallery();
+    updateAchievementUI();
+}
+
+/** 删除指定槽位 */
+function deleteSlot(slotIndex) {
+    if (slotIndex < 2) {
+        alert('自动存档和快速存档不可删除，只能覆盖');
+        return;
+    }
+    if (!confirm('确定要删除「' + SLOT_NAMES[slotIndex] + '」吗？此操作不可恢复。')) return;
+    var slots = getSaveSlots();
+    if (slots[slotIndex]) {
+        slots[slotIndex] = null;
+        setSaveSlots(slots);
+        renderSaveSlots();
+        updateSaveIndicator('🗑 已删除 ' + SLOT_NAMES[slotIndex]);
+    }
+}
+
+/** 导出单个槽位为JSON文件 */
+function exportSlot(slotIndex) {
+    var slots = getSaveSlots();
+    if (!slots[slotIndex] || !slots[slotIndex].gameState) {
+        alert('📭 该槽位无存档数据');
+        return;
+    }
+    var data = slots[slotIndex];
+    var json = JSON.stringify(data, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'oldman_save_' + SLOT_NAMES[slotIndex] + '_' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+/** 导出所有槽位为JSON文件 */
+function exportAllSlots() {
+    var slots = getSaveSlots();
+    var exportData = {
+        exportVersion: GAME_VERSION,
+        exportTime: new Date().toISOString(),
+        slots: slots
+    };
+    var json = JSON.stringify(exportData, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'oldman_saves_all_' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+/** 导入存档JSON文件 */
+function importSave() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+            try {
+                var data = JSON.parse(ev.target.result);
+                // 判断是单个存档还是多槽位导出
+                if (data.slots && Array.isArray(data.slots)) {
+                    // 多槽位导出
+                    if (!confirm('检测到多槽位存档包，导入将覆盖当前所有存档槽位，确定继续吗？')) return;
+                    var importedSlots = data.slots;
+                    for (var i = 0; i < importedSlots.length && i < MAX_SLOTS; i++) {
+                        if (importedSlots[i]) {
+                            importedSlots[i] = upgradeSave(importedSlots[i]);
+                        }
+                    }
+                    setSaveSlots(importedSlots);
+                    renderSaveSlots();
+                    alert('✅ 已导入全部存档槽位');
+                } else if (data.gameState) {
+                    // 单个存档，放入第一个空槽位
+                    data = upgradeSave(data);
+                    var slots = getSaveSlots();
+                    var targetSlot = -1;
+                    for (var s = 2; s < MAX_SLOTS; s++) {
+                        if (!slots[s] || !slots[s].gameState) {
+                            targetSlot = s;
+                            break;
+                        }
+                    }
+                    if (targetSlot === -1) {
+                        if (!confirm('所有手动槽位已满，是否覆盖手动1？')) return;
+                        targetSlot = 2;
+                    }
+                    while (slots.length < MAX_SLOTS) { slots.push(null); }
+                    slots[targetSlot] = data;
+                    setSaveSlots(slots);
+                    renderSaveSlots();
+                    alert('✅ 已导入存档到「' + SLOT_NAMES[targetSlot] + '」');
+                } else {
+                    alert('❌ 无效的存档文件格式');
+                }
+            } catch (err) {
+                alert('❌ 文件解析失败：' + (err.message || '未知错误'));
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+/** 升级旧存档格式到当前版本 */
+function upgradeSave(data) {
+    if (!data) return data;
+    if (!data.version) data.version = '1.0.0';
+    if (!data.gameVersion) data.gameVersion = GAME_VERSION;
+    if (!data.timestamp) data.timestamp = Date.now();
+    if (!data.gameState) {
+        data.gameState = {
+            willpower: 1, stamina: 4, insight: 0,
+            flags: [], currentNode: 'N1', history: [],
+            endingsUnlocked: [], achievements: [],
+            achievementProgress: { totalPlaythroughs: 0, totalSaves: 0, totalLoads: 0, sharkFightCount: 0, sharkFleeCount: 0, nodesSurvivedLowStamina: 0, rejectSurrenderCount: 0 },
+            playCount: 0
+        };
+    }
+    var gs = data.gameState;
+    if (typeof gs.willpower === 'undefined') gs.willpower = 1;
+    if (typeof gs.stamina === 'undefined') gs.stamina = 4;
+    if (typeof gs.insight === 'undefined') gs.insight = 0;
+    if (!gs.flags) gs.flags = [];
+    if (!gs.history) gs.history = [];
+    if (!gs.endingsUnlocked) gs.endingsUnlocked = [];
+    if (!gs.achievements) gs.achievements = [];
+    if (!gs.achievementProgress) {
+        gs.achievementProgress = {
+            totalPlaythroughs: 0, totalSaves: 0, totalLoads: 0,
+            sharkFightCount: 0, sharkFleeCount: 0,
+            nodesSurvivedLowStamina: 0, rejectSurrenderCount: 0
+        };
+    }
+    if (typeof gs.playCount === 'undefined') gs.playCount = 0;
+    if (typeof gs._abandonCount === 'undefined') gs._abandonCount = 0;
+    if (typeof gs._lonerConsecutive === 'undefined') gs._lonerConsecutive = 0;
+    if (typeof gs._aggressiveCount === 'undefined') gs._aggressiveCount = 0;
+    if (typeof gs._restCount === 'undefined') gs._restCount = 0;
+    if (typeof gs._lowStaminaCount === 'undefined') gs._lowStaminaCount = 0;
+    if (typeof gs._justDidE12 === 'undefined') gs._justDidE12 = false;
+    if (typeof gs._memeN2BChosen === 'undefined') gs._memeN2BChosen = false;
+    if (!data.settings) {
+        data.settings = { memeMode: true, autoSave: true, soundEnabled: false, liquidGlassEnabled: false, textSpeed: 1.0 };
+    }
+    if (!data.metadata) {
+        data.metadata = { playerName: '圣地亚哥', totalPlayTime: 0, lastPlayDate: new Date().toISOString() };
+    }
+    return data;
+}
+
+/** 获取节点友好名称 */
+function getNodeDisplayName(nodeId) {
+    if (!nodeId) return '?';
+    if (gameData && gameData.nodes) {
+        var node = gameData.nodes[nodeId];
+        if (node && node.scene) {
+            var scene = node.scene || '';
+            // 移除emoji前缀
+            var name = scene.replace(/^[^\u4e00-\u9fa5a-zA-Z]+/, '');
+            return name || nodeId;
+        }
+    }
+    if (gameData && gameData.endings) {
+        var ending = gameData.endings[nodeId];
+        if (ending) return '🏆 ' + ending.title;
+    }
+    return nodeId;
+}
+
+/** 渲染历史记录标签页 */
+function renderHistory() {
+    var container = document.getElementById('tab-history');
+    if (!container) return;
+    var history = gameState.history || [];
+    var totalNodes = 0;
+    if (gameData && gameData.nodes) {
+        for (var k in gameData.nodes) {
+            if (gameData.nodes.hasOwnProperty(k)) totalNodes++;
+        }
+    }
+    var pct = totalNodes > 0 ? Math.round(history.length / totalNodes * 100) : 0;
+
+    var html = '<div class="history-timeline">';
+    html += '<div class="history-summary">当前游戏路径（共 <strong>' + history.length + '</strong> 个节点，完成度 <strong>' + pct + '%</strong>）</div>';
+
+    if (history.length === 0) {
+        html += '<div style="color:#6a8f9a;text-align:center;padding:20px;">暂无历史记录，开始游戏吧！</div>';
+    } else {
+        html += '<div style="font-size:13px;color:#6a8f9a;margin-bottom:8px;">⏳ 节点序列（按时间顺序）：</div>';
+        for (var i = 0; i < history.length; i++) {
+            var id = history[i];
+            var name = getNodeDisplayName(id);
+            var icon = (id.indexOf('E') === 0) ? '🏆' : '📖';
+            var isCurrent = (i === history.length - 1);
+            html += '<div class="history-item' + (isCurrent ? ' current' : '') + '">';
+            html += '<span class="history-icon">' + icon + '</span>';
+            html += '<span>' + (i + 1) + '. ' + name + ' <span style="font-size:11px;color:#6a8f9a;">(' + id + ')</span>';
+            if (isCurrent) html += ' <span style="font-size:11px;color:#c9a86c;">← 当前位置</span>';
+            html += '</span></div>';
+        }
+    }
+
+    html += '<div class="history-actions">';
+    html += '<button class="slot-btn" onclick="exportHistoryAsText()">📤 导出历史为文本</button>';
+    html += '</div>';
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+/** 导出历史记录为文本文件 */
+function exportHistoryAsText() {
+    var history = gameState.history || [];
+    var lines = ['《老人与海》游戏路径记录', '生成时间：' + new Date().toLocaleString(), '游戏版本：v' + GAME_VERSION, ''];
+    for (var i = 0; i < history.length; i++) {
+        var id = history[i];
+        var name = getNodeDisplayName(id);
+        lines.push((i + 1) + '. ' + name + ' (' + id + ')');
+    }
+    if (history.length === 0) {
+        lines.push('（暂无历史记录）');
+    }
+    var text = lines.join('\n');
+    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'history_' + new Date().toISOString().slice(0, 10) + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+/** 渲染游戏设置标签页 */
+function renderSettingsTab() {
+    var container = document.getElementById('tab-game');
+    if (!container) return;
+
+    var html = '';
+    html += '<div class="setting-row">';
+    html += '<div><label>梗模式</label><div class="setting-desc">开启后游戏中会出现有趣的网络梗和彩蛋</div></div>';
+    html += '<label class="toggle-switch"><input type="checkbox" id="meme-toggle" ' + (gameSettings.memeMode ? 'checked' : '') + ' onchange="gameSettings.memeMode=this.checked;saveSettings();"><span class="toggle-slider"></span></label>';
+    html += '</div>';
+
+    html += '<div class="setting-row">';
+    html += '<div><label>自动存档</label><div class="setting-desc">每次选择后自动保存到自动存档槽位</div></div>';
+    html += '<label class="toggle-switch"><input type="checkbox" id="game-auto-save-toggle" ' + (gameSettings.autoSave ? 'checked' : '') + ' onchange="gameSettings.autoSave=this.checked;saveSettings();"><span class="toggle-slider"></span></label>';
+    html += '</div>';
+
+    html += '<div class="setting-row">';
+    html += '<div><label>音效</label><div class="setting-desc">开启后选项、过渡、存档、成就等操作将播放音效</div></div>';
+    html += '<label class="toggle-switch"><input type="checkbox" id="sound-toggle" ' + (gameSettings.soundEnabled ? 'checked' : '') + ' onchange="gameSettings.soundEnabled=this.checked;saveSettings();"><span class="toggle-slider"></span></label>';
+    html += '</div>';
+
+    html += '<div class="setting-row">';
+    html += '<div><label>液态玻璃效果</label><div class="setting-desc">WebGL 液态玻璃动态背景（实验性，可能影响性能）</div></div>';
+    html += '<label class="toggle-switch"><input type="checkbox" id="liquid-glass-toggle" ' + (gameSettings.liquidGlassEnabled ? 'checked' : '') + ' onchange="gameSettings.liquidGlassEnabled=this.checked;saveSettings();if(this.checked){startLiquidGlass();}else{stopLiquidGlass();}"><span class="toggle-slider"></span></label>';
+    html += '</div>';
+
+    html += '<div class="setting-row">';
+    html += '<div><label>文本速度</label><div class="setting-desc">调整文本显示速度（当前: ' + gameSettings.textSpeed.toFixed(1) + 'x）</div></div>';
+    html += '<input type="range" class="text-speed-slider" min="0.5" max="2.0" step="0.1" value="' + gameSettings.textSpeed + '" onchange="gameSettings.textSpeed=parseFloat(this.value);saveSettings();this.parentElement.querySelector(\'.setting-desc\').textContent=\'调整文本显示速度（当前: \' + this.value + \'x）\';">';
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+/** 渲染关于标签页 */
+function renderAboutTab() {
+    var container = document.getElementById('tab-about');
+    if (!container) return;
+
+    var html = '<div class="about-content">';
+    html += '<h3>⚓ 老人与海 · 互动叙事游戏</h3>';
+    html += '<div class="about-version" onclick="onVersionClick()" title="版本信息">版本: v' + GAME_VERSION + ' (Build 2026.08.18)</div>';
+    html += '<div class="about-divider"></div>';
+    html += '<p>基于海明威中篇小说《老人与海》改编</p>';
+    html += '<p>高中语文选择性必修上册 互动学习辅助作品</p>';
+    html += '<div class="about-divider"></div>';
+    html += '<div class="about-section">© 2026 曾泊霖。基于海明威原著，仅供学习交流使用。</div>';
+    html += '<div class="about-section">本游戏采用 MIT 许可证开源</div>';
+    html += '<div class="about-section" style="margin-top:4px;color:#5a7a84;">工具调用：Deepseek API 用于生成游戏内容</div>';
+    html += '<div class="about-section" style="margin-top:12px;color:#5a7a84;">特别致敬：欧内斯特·海明威</div>';
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+/** 更新存档指示器 */
+function updateSaveIndicator(msg) {
+    var indicator = document.getElementById('save-indicator');
+    if (!indicator) return;
+    var orig = indicator.textContent;
+    indicator.textContent = msg || '✅ 已保存';
+    indicator.style.color = '#7ec8a0';
+    setTimeout(function () {
+        indicator.textContent = orig;
+        indicator.style.color = '';
+    }, 2000);
+}
+
+// =============================================================
+//  启动
+// =============================================================
+window.onload = function () {
+    gameData = getDefaultGameData();
+    initSettings();
+    initGame();
+    initAchievementSystem();
+    // 用户首次交互时初始化音频上下文（浏览器要求用户手势）
+    var _initAudioOnce = function () { initAudio(); document.removeEventListener('click', _initAudioOnce); };
+    document.addEventListener('click', _initAudioOnce);
+    updateGallery();
+    document.getElementById('gallery-grid').style.display = 'none';
+    document.getElementById('achievement-grid').style.display = 'none';
+
+    // 梗模式浮层提示
+    if (MEME_MODE) {
+        document.getElementById('meme-tip').style.display = 'block';
+    }
+
+    // 液态玻璃效果（如果已启用）
+    if (gameSettings.liquidGlassEnabled) {
+        startLiquidGlass();
+    }
+};
+</script>
+<!-- ========== Settings Modal ========== -->
+<div class="settings-overlay" id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-header">
+            <h2>⚙️ 设置</h2>
+            <button class="settings-close" onclick="closeSettings()">✕</button>
+        </div>
+        <div class="settings-tabs">
+            <button class="settings-tab active" data-tab="saves" onclick="switchSettingsTab('saves')">📂 存档管理</button>
+            <button class="settings-tab" data-tab="game" onclick="switchSettingsTab('game')">🎮 游戏设置</button>
+            <button class="settings-tab" data-tab="history" onclick="switchSettingsTab('history')">📊 历史记录</button>
+            <button class="settings-tab" data-tab="about" onclick="switchSettingsTab('about')">ℹ️ 关于</button>
+        </div>
+        <div class="settings-tab-content active" id="tab-saves"></div>
+        <div class="settings-tab-content" id="tab-game"></div>
+        <div class="settings-tab-content" id="tab-history"></div>
+        <div class="settings-tab-content" id="tab-about"></div>
+    </div>
+</div>
+
+<!-- ========== Copyright Modal（防篡改版权弹窗） ========== -->
+<div class="copyright-overlay" id="copyright-modal" onclick="if(event.target===this)closeCopyrightModal()">
+    <div class="copyright-box">
+        <div class="copyright-text" id="copyright-modal-text"></div>
+        <button class="copyright-close" onclick="closeCopyrightModal()">确定</button>
+    </div>
+</div>
+</body>
+</html>
