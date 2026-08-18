@@ -1191,6 +1191,34 @@
             color: #6a8f9a;
             margin-top: 10px;
         }
+        .save-danger-zone {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,99,71,0.25);
+        }
+        .save-danger-title {
+            font-size: 12px;
+            color: #ff6347;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .save-danger-btns {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            gap: 10px;
+            -webkit-flex-wrap: wrap;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+        }
+        .save-danger-desc {
+            font-size: 11px;
+            color: #6a8f9a;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
 
         /* ========== History Timeline ========== */
         .history-timeline {
@@ -2153,9 +2181,13 @@ function checkHiddenEndings(nodeId) {
     }
 
     // E9: 渔夫的遗产 —— 在N13过渡到N14前检查
-    // 条件：感悟>=3 + 精神>=5
+    // 条件：感悟>=3 + 精神>=5 + 未跟随星海导航（避免与E10冲突）
     if (nodeId === 'N13') {
-        if (gameState.insight >= 3 && gameState.willpower >= 5) {
+        var hasStarGuideE9 = false;
+        for (var fs9 = 0; fs9 < gameState.flags.length; fs9++) {
+            if (gameState.flags[fs9] === 'starGuide') { hasStarGuideE9 = true; break; }
+        }
+        if (gameState.insight >= 3 && gameState.willpower >= 5 && !hasStarGuideE9) {
             gameState._hiddenEnding = 'E9';
             return;
         }
@@ -2232,12 +2264,12 @@ function makeChoice(index) {
     var sharkNodes = ['N18', 'N19', 'N20', 'N22'];
     if (sharkNodes.indexOf(node.id) !== -1) {
         sfxShark();
-        var isFight = choiceText.indexOf('战斗') !== -1 || choiceText.indexOf('刺') !== -1 ||
+        var isFight = choiceText.indexOf('刺') !== -1 ||
                        choiceText.indexOf('砸') !== -1 || choiceText.indexOf('拼') !== -1 ||
                        choiceText.indexOf('硬') !== -1 || choiceText.indexOf('搏') !== -1;
         var isFlee = choiceText.indexOf('放弃') !== -1 || choiceText.indexOf('保命') !== -1 ||
                       choiceText.indexOf('躺') !== -1 || choiceText.indexOf('算了') !== -1 ||
-                      choiceText.indexOf('溜') !== -1 || choiceText.indexOf('退') !== -1;
+                      choiceText.indexOf('溜') !== -1;
         if (isFight) gameState.achievementProgress.sharkFightCount = (gameState.achievementProgress.sharkFightCount || 0) + 1;
         if (isFlee) gameState.achievementProgress.sharkFleeCount = (gameState.achievementProgress.sharkFleeCount || 0) + 1;
     }
@@ -2346,6 +2378,11 @@ function renderEnding(endingId) {
         if (!hasBoyFlag) {
             gameState.achievementProgress._e2NoBoy = true;
         }
+    }
+
+    // A06 残血战神：体力≤1且当前结局非E3（在结局落地时精确判定，避免中途误触发）
+    if (endingId !== 'E3' && gameState.stamina <= 1) {
+        unlockAchievement('A06');
     }
 
     // 成就追踪：通关次数
@@ -2557,11 +2594,7 @@ function checkAchievements() {
     if (s.willpower >= 8 && unlocked.indexOf('A04') === -1) unlockAchievement('A04');
     // A05: 海之哲人
     if (s.insight >= 5 && unlocked.indexOf('A05') === -1) unlockAchievement('A05');
-    // A06: 残血战神 —— 体力≤1且通关且当前结局非E3
-    var lastEnding = s.endingsUnlocked.length > 0 ? s.endingsUnlocked[s.endingsUnlocked.length - 1] : null;
-    if (s.stamina <= 1 && s.endingsUnlocked.length > 0 && lastEnding !== 'E3' && unlocked.indexOf('A06') === -1) {
-        unlockAchievement('A06');
-    }
+    // A06: 残血战神 —— 已在 renderEnding 中按“当前结局”精确判定（避免中途低体力误触发）
     // A07: S/L大师
     if ((p.totalSaves || 0) + (p.totalLoads || 0) >= 10 && unlocked.indexOf('A07') === -1) unlockAchievement('A07');
     // A08: 鲨鱼克星
@@ -3549,6 +3582,16 @@ function renderSaveSlots() {
     html += '<button class="slot-btn" onclick="exportAllSlots()">📤 导出所有存档</button>';
     html += '</div>';
 
+    // 危险操作
+    html += '<div class="save-danger-zone">';
+    html += '<div class="save-danger-title">⚠️ 危险操作</div>';
+    html += '<div class="save-danger-btns">';
+    html += '<button class="slot-btn danger" onclick="deleteAllSlots()">🗑 删除所有存档</button>';
+    html += '<button class="slot-btn danger" onclick="clearAllProgress()">🧹 删除全部进度</button>';
+    html += '</div>';
+    html += '<div class="save-danger-desc">「删除所有存档」仅清空存档槽位；「删除全部进度」将清空所有结局、成就与进度，并重新开始。</div>';
+    html += '</div>';
+
     // 自动存档开关
     html += '<div class="setting-row" style="margin-top:12px;">';
     html += '<div><label>自动存档</label><div class="setting-desc">每次选择后自动保存到自动存档槽位</div></div>';
@@ -3737,6 +3780,53 @@ function deleteSlot(slotIndex) {
         renderSaveSlots();
         updateSaveIndicator('🗑 已删除 ' + SLOT_NAMES[slotIndex]);
     }
+}
+
+/** 删除所有存档槽位（保留当前进度与成就） */
+function deleteAllSlots() {
+    if (!confirm('确定要删除所有存档槽位吗？（自动/快速/手动存档将被清空）此操作不可恢复。')) return;
+    setSaveSlots([]);
+    renderSaveSlots();
+    updateSaveIndicator('🗑 已删除所有存档');
+}
+
+/** 删除全部进度（清空结局、成就、存档并重新开始） */
+function clearAllProgress() {
+    if (!confirm('确定要删除全部进度吗？所有结局、成就、存档和历史记录都将被清空，游戏将重新开始。此操作不可恢复。')) return;
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* 静默 */ }
+    // 重置游戏状态
+    gameState.willpower = 1;
+    gameState.stamina = 4;
+    gameState.insight = 0;
+    gameState.flags = [];
+    gameState.currentNode = 'N1';
+    gameState.history = [];
+    gameState.endingsUnlocked = [];
+    gameState.achievements = [];
+    gameState.playCount = 0;
+    gameState._pendingTransition = null;
+    gameState._abandonCount = 0;
+    gameState._lonerConsecutive = 0;
+    gameState._aggressiveCount = 0;
+    gameState._restCount = 0;
+    gameState._lowStaminaCount = 0;
+    gameState._justDidE12 = false;
+    gameState._memeN2BChosen = false;
+    gameState.achievementProgress = {
+        totalPlaythroughs: 0, totalSaves: 0, totalLoads: 0,
+        sharkFightCount: 0, sharkFleeCount: 0,
+        nodesSurvivedLowStamina: 0, rejectSurrenderCount: 0
+    };
+    // 重新开始并清空所有槽位
+    cancelPendingTransition();
+    renderNode('N1');
+    updateUI();
+    updateGallery();
+    updateAchievementUI();
+    saveGameSilent();
+    setSaveSlots([]);
+    renderSaveSlots();
+    updateSaveIndicator('🧹 已删除全部进度');
 }
 
 /** 导出单个槽位为JSON文件 */
