@@ -951,8 +951,8 @@
         }
         .copyright-close:hover { background: #dcc38a; }
 
-        /* ========== Video Modal ========== */
-        .video-overlay {
+        /* ========== Music Modal ========== */
+        .music-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -970,22 +970,31 @@
             align-items: center;
             padding: 20px;
         }
-        .video-box {
+        .music-box {
             position: relative;
             width: 100%;
-            max-width: 860px;
-        }
-        .video-box video {
-            width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 12px;
-            background: #000;
+            max-width: 420px;
+            background: #0a1e26;
+            border: 1px solid #c9a86c;
+            border-radius: 16px;
+            padding: 32px 28px;
+            text-align: center;
             -webkit-box-shadow: 0 16px 64px rgba(0,0,0,0.8);
             -moz-box-shadow: 0 16px 64px rgba(0,0,0,0.8);
             box-shadow: 0 16px 64px rgba(0,0,0,0.8);
         }
-        .video-close {
+        .music-title {
+            font-size: 20px;
+            color: #d4b87a;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+        .music-box audio {
+            width: 100%;
+            display: block;
+            outline: none;
+        }
+        .music-close {
             position: absolute;
             top: -16px; right: -16px;
             width: 36px; height: 36px;
@@ -1000,7 +1009,7 @@
             transition: background 0.3s;
             font-family: inherit;
         }
-        .video-close:hover { background: #dcc38a; }
+        .music-close:hover { background: #dcc38a; }
 
         /* ========== Settings Tabs ========== */
         .settings-tabs {
@@ -1617,38 +1626,38 @@ function closeCopyrightModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// ---- 连续点击标题触发视频弹窗 ----
+// ---- 连续点击标题触发音乐弹窗 ----
 var _titleClickCount = 0;
 var _titleClickTimer = null;
 
-/** 标题点击处理（连续点击 5 次触发视频弹窗） */
+/** 标题点击处理（连续点击 5 次触发音乐弹窗） */
 function onTitleClick() {
     _titleClickCount++;
     if (_titleClickTimer) clearTimeout(_titleClickTimer);
     _titleClickTimer = setTimeout(function () { _titleClickCount = 0; }, 2000);
     if (_titleClickCount >= 5) {
         _titleClickCount = 0;
-        openVideoModal();
+        openMusicModal();
     }
 }
 
-/** 打开视频弹窗并播放 video.mp4 */
-function openVideoModal() {
-    var overlay = document.getElementById('video-modal');
-    var video = document.getElementById('video-player');
-    if (!overlay || !video) return;
+/** 打开音乐弹窗并播放 music.mp3 */
+function openMusicModal() {
+    var overlay = document.getElementById('music-modal');
+    var audio = document.getElementById('music-player');
+    if (!overlay || !audio) return;
     overlay.style.display = 'flex';
-    video.currentTime = 0;
-    var p = video.play();
+    audio.currentTime = 0;
+    var p = audio.play();
     if (p && p.catch) { p.catch(function () {}); }
 }
 
-/** 关闭视频弹窗（暂停并复位） */
-function closeVideoModal() {
-    var overlay = document.getElementById('video-modal');
-    var video = document.getElementById('video-player');
+/** 关闭音乐弹窗（暂停并复位） */
+function closeMusicModal() {
+    var overlay = document.getElementById('music-modal');
+    var audio = document.getElementById('music-player');
     if (overlay) overlay.style.display = 'none';
-    if (video) { video.pause(); video.currentTime = 0; }
+    if (audio) { audio.pause(); audio.currentTime = 0; }
 }
 
 // =============================================================
@@ -4080,11 +4089,12 @@ window.onload = function () {
     </div>
 </div>
 
-<!-- ========== Video Modal（标题彩蛋） ========== -->
-<div class="video-overlay" id="video-modal">
-    <div class="video-box">
-        <button class="video-close" onclick="closeVideoModal()" title="关闭">✕</button>
-        <video id="video-player" src="video.mp4" controls playsinline></video>
+<!-- ========== Music Modal（标题彩蛋） ========== -->
+<div class="music-overlay" id="music-modal">
+    <div class="music-box">
+        <button class="music-close" onclick="closeMusicModal()" title="关闭">✕</button>
+        <div class="music-title">🎵 云原神之歌</div>
+        <audio id="music-player" src="music.mp3" controls></audio>
     </div>
 </div>
 </body>
