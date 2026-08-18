@@ -196,6 +196,16 @@
             letter-spacing: 4px;
             color: #d4b87a;
             text-shadow: 0 0 20px rgba(201,168,108,0.2);
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-transition: text-shadow 0.3s;
+            transition: text-shadow 0.3s;
+        }
+        #header h1:hover {
+            text-shadow: 0 0 28px rgba(201,168,108,0.6);
         }
         #save-indicator {
             font-size: 13px;
@@ -941,6 +951,57 @@
         }
         .copyright-close:hover { background: #dcc38a; }
 
+        /* ========== Video Modal ========== */
+        .video-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 3000;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .video-box {
+            position: relative;
+            width: 100%;
+            max-width: 860px;
+        }
+        .video-box video {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 12px;
+            background: #000;
+            -webkit-box-shadow: 0 16px 64px rgba(0,0,0,0.8);
+            -moz-box-shadow: 0 16px 64px rgba(0,0,0,0.8);
+            box-shadow: 0 16px 64px rgba(0,0,0,0.8);
+        }
+        .video-close {
+            position: absolute;
+            top: -16px; right: -16px;
+            width: 36px; height: 36px;
+            cursor: pointer;
+            font-size: 18px;
+            color: #0a1e26;
+            background: #c9a86c;
+            border: none;
+            border-radius: 50%;
+            line-height: 1;
+            -webkit-transition: background 0.3s;
+            transition: background 0.3s;
+            font-family: inherit;
+        }
+        .video-close:hover { background: #dcc38a; }
+
         /* ========== Settings Tabs ========== */
         .settings-tabs {
             display: -webkit-box;
@@ -1368,7 +1429,7 @@
 <div id="app">
     <div id="meme-tip" style="display:none;text-align:center;font-size:12px;color:rgba(180,210,220,0.5);margin-bottom:12px;padding:8px 0;">💡 温馨提示：本游戏支持 S/L 大法（存档/读档），打不过就回档，不丢人。</div>
     <div id="header">
-        <h1>⚓ 老人与海 · 命运之海</h1>
+        <h1 onclick="onTitleClick()" title="老人与海 · 命运之海">⚓ 老人与海 · 命运之海</h1>
         <span id="settings-btn" onclick="openSettings('saves')">⚙️ 设置</span>
         <span id="save-indicator" onclick="saveGame()">💾 存档</span>
         <span id="file-setup" onclick="initFileSave().then(function(ok){if(ok){saveGameSilent();document.getElementById('file-setup').style.display='none';}})" style="cursor:pointer;font-size:12px;color:rgba(180,210,220,0.4);margin-left:6px;" title="配置文件存储到 save.json">📁</span>
@@ -1473,7 +1534,7 @@ var currentNodeObj = null;
 var SAVE_KEY = 'oldman_sea_destiny_save_v2';
 
 // ---- 新版存档系统常量 ----
-var GAME_VERSION = '3.4.0';
+var GAME_VERSION = '3.5.0';
 var SAVE_SLOTS_KEY = 'oldman_sea_slots_v3';
 var SETTINGS_KEY = 'oldman_sea_settings_v3';
 var MAX_SLOTS = 4;
@@ -1554,6 +1615,40 @@ function showCopyrightModal() {
 function closeCopyrightModal() {
     var modal = document.getElementById('copyright-modal');
     if (modal) modal.style.display = 'none';
+}
+
+// ---- 连续点击标题触发视频弹窗 ----
+var _titleClickCount = 0;
+var _titleClickTimer = null;
+
+/** 标题点击处理（连续点击 5 次触发视频弹窗） */
+function onTitleClick() {
+    _titleClickCount++;
+    if (_titleClickTimer) clearTimeout(_titleClickTimer);
+    _titleClickTimer = setTimeout(function () { _titleClickCount = 0; }, 2000);
+    if (_titleClickCount >= 5) {
+        _titleClickCount = 0;
+        openVideoModal();
+    }
+}
+
+/** 打开视频弹窗并播放 video.mp4 */
+function openVideoModal() {
+    var overlay = document.getElementById('video-modal');
+    var video = document.getElementById('video-player');
+    if (!overlay || !video) return;
+    overlay.style.display = 'flex';
+    video.currentTime = 0;
+    var p = video.play();
+    if (p && p.catch) { p.catch(function () {}); }
+}
+
+/** 关闭视频弹窗（暂停并复位） */
+function closeVideoModal() {
+    var overlay = document.getElementById('video-modal');
+    var video = document.getElementById('video-player');
+    if (overlay) overlay.style.display = 'none';
+    if (video) { video.pause(); video.currentTime = 0; }
 }
 
 // =============================================================
@@ -3982,6 +4077,14 @@ window.onload = function () {
     <div class="copyright-box">
         <div class="copyright-text" id="copyright-modal-text"></div>
         <button class="copyright-close" onclick="closeCopyrightModal()">确定</button>
+    </div>
+</div>
+
+<!-- ========== Video Modal（标题彩蛋） ========== -->
+<div class="video-overlay" id="video-modal">
+    <div class="video-box">
+        <button class="video-close" onclick="closeVideoModal()" title="关闭">✕</button>
+        <video id="video-player" src="video.mp4" controls playsinline></video>
     </div>
 </div>
 </body>
