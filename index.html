@@ -1654,6 +1654,27 @@ function closeCopyrightModal() {
     if (modal) modal.style.display = 'none';
 }
 
+// ---- 连续点击版权声明跳转到作者主页 ----
+var _cpClickCount = 0;
+var _cpClickTimer = null;
+
+/** 版权声明点击处理（连续点击 3 次跳转到作者主页） */
+function onCopyrightClick() {
+    _cpClickCount++;
+    if (_cpClickTimer) { clearTimeout(_cpClickTimer); _cpClickTimer = null; }
+    _cpClickTimer = setTimeout(function () { _cpClickCount = 0; }, 2000);
+    if (_cpClickCount >= 3) {
+        _cpClickCount = 0;
+        if (_cpClickTimer) { clearTimeout(_cpClickTimer); _cpClickTimer = null; }
+        window.open('https://zengbolin.wordpress.com/', '_blank');
+    }
+}
+
+/** 版权弹窗「此程序由曾泊霖构建」点击一次跳转到作者主页 */
+function onCopyrightNoticeClick() {
+    window.open('https://zengbolin.wordpress.com/', '_blank');
+}
+
 // ---- 连续点击标题触发音乐弹窗 ----
 var _titleClickCount = 0;
 var _titleClickTimer = null;
@@ -4103,7 +4124,7 @@ function renderAboutTab() {
     html += '<p>基于海明威中篇小说《老人与海》改编</p>';
     html += '<p>高中语文选择性必修上册 互动学习辅助作品</p>';
     html += '<div class="about-divider"></div>';
-    html += '<div class="about-section">© 2026 曾泊霖。基于海明威原著，仅供学习交流使用。</div>';
+    html += '<div class="about-section" onclick="onCopyrightClick()" title="版权声明" style="cursor:pointer;">© 2026 曾泊霖。基于海明威原著，仅供学习交流使用。</div>';
     html += '<div class="about-section">本游戏采用 MIT 许可证开源</div>';
     html += '<div class="about-section" style="margin-top:4px;color:#5a7a84;">工具调用：Deepseek API 用于生成游戏内容</div>';
     html += '<div class="about-section" style="margin-top:12px;color:#5a7a84;">特别致敬：欧内斯特·海明威</div>';
@@ -4174,7 +4195,7 @@ window.onload = function () {
 <!-- ========== Copyright Modal（防篡改版权弹窗） ========== -->
 <div class="copyright-overlay" id="copyright-modal" onclick="if(event.target===this)closeCopyrightModal()">
     <div class="copyright-box">
-        <div class="copyright-text" id="copyright-modal-text"></div>
+        <div class="copyright-text" id="copyright-modal-text" onclick="onCopyrightNoticeClick()" title="点击跳转到作者主页" style="cursor:pointer;"></div>
         <button class="copyright-close" onclick="closeCopyrightModal()">确定</button>
     </div>
 </div>
